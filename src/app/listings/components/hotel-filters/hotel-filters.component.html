@@ -1,0 +1,204 @@
+<div class="filters-container" [class.filters-container--open]="isOpen">
+  <div class="filters-backdrop" (click)="onClose()"></div>
+
+  <aside class="filters-panel">
+    <!-- Header -->
+    <div class="filters-header">
+      <div class="filters-header__left">
+        <h3 class="filters-title">Filters</h3>
+        <span class="active-badge" *ngIf="activeFiltersCount > 0">
+          {{ activeFiltersCount }} active
+        </span>
+      </div>
+
+      <div class="filters-header__right">
+        <button
+          type="button"
+          class="reset-btn"
+          *ngIf="activeFiltersCount > 0"
+          (click)="resetAll()"
+        >
+          Clear all
+        </button>
+        <button
+          type="button"
+          class="close-drawer-btn"
+          (click)="onClose()"
+          aria-label="Close filters"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Scrollable content -->
+    <div class="filters-body">
+      <!-- Price Range Section -->
+      <section class="filter-group">
+        <h4 class="group-title">Price Range (per night)</h4>
+        <p class="group-subtitle">Nightly prices before taxes and fees</p>
+
+        <!-- Price Distribution Histogram -->
+        <div class="histogram-bars">
+          <div
+            *ngFor="let h of histogramBars; let i = index"
+            class="histogram-bar"
+            [style.height.px]="h * 0.45"
+            [class.histogram-bar--in-range]="
+              (minBound + (i / histogramBars.length) * (maxBound - minBound)) >= localMinPrice &&
+              (minBound + (i / histogramBars.length) * (maxBound - minBound)) <= localMaxPrice
+            "
+          ></div>
+        </div>
+
+        <!-- Slider and Input Fields -->
+        <div class="price-inputs">
+          <div class="price-field">
+            <label>Minimum</label>
+            <div class="price-input-wrapper">
+              <span class="currency">$</span>
+              <input
+                type="number"
+                [(ngModel)]="localMinPrice"
+                [min]="minBound"
+                [max]="localMaxPrice"
+                (change)="onPriceChange()"
+              />
+            </div>
+          </div>
+
+          <span class="price-dash">—</span>
+
+          <div class="price-field">
+            <label>Maximum</label>
+            <div class="price-input-wrapper">
+              <span class="currency">$</span>
+              <input
+                type="number"
+                [(ngModel)]="localMaxPrice"
+                [min]="localMinPrice"
+                [max]="maxBound"
+                (change)="onPriceChange()"
+              />
+            </div>
+          </div>
+        </div>
+
+        <input
+          type="range"
+          class="price-slider"
+          [min]="minBound"
+          [max]="maxBound"
+          [(ngModel)]="localMaxPrice"
+          (input)="onPriceChange()"
+        />
+      </section>
+
+      <!-- Rating Section -->
+      <section class="filter-group">
+        <h4 class="group-title">Guest Rating</h4>
+        <div class="rating-pills">
+          <button
+            type="button"
+            *ngFor="let opt of ratingOptions"
+            class="pill-btn"
+            [class.pill-btn--active]="selectedRating === opt.value"
+            (click)="onRatingSelect(opt.value)"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+      </section>
+
+      <!-- Property Type / Category -->
+      <section class="filter-group">
+        <h4 class="group-title">Property Category</h4>
+        <div class="category-grid">
+          <button
+            type="button"
+            *ngFor="let cat of categories"
+            class="category-card-btn"
+            [class.category-card-btn--active]="selectedCategory === cat.value"
+            (click)="onCategorySelect(cat.value)"
+          >
+            <span class="cat-icon">{{ cat.icon }}</span>
+            <span class="cat-label">{{ cat.label }}</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Perks & Special Features -->
+      <section class="filter-group">
+        <h4 class="group-title">Perks & Booking Type</h4>
+        <div class="checkbox-list">
+          <label class="custom-checkbox">
+            <input
+              type="checkbox"
+              [checked]="superhostOnly"
+              (change)="togglePerk('superhost')"
+            />
+            <span class="checkmark"></span>
+            <div class="label-info">
+              <span class="label-title">⭐ Superhost Only</span>
+              <span class="label-desc">Stay with highly rated, experienced hosts</span>
+            </div>
+          </label>
+
+          <label class="custom-checkbox">
+            <input
+              type="checkbox"
+              [checked]="freeCancellationOnly"
+              (change)="togglePerk('cancellation')"
+            />
+            <span class="checkmark"></span>
+            <div class="label-info">
+              <span class="label-title">✓ Free Cancellation</span>
+              <span class="label-desc">Flexibility to cancel without penalty</span>
+            </div>
+          </label>
+
+          <label class="custom-checkbox">
+            <input
+              type="checkbox"
+              [checked]="instantBookOnly"
+              (change)="togglePerk('instant')"
+            />
+            <span class="checkmark"></span>
+            <div class="label-info">
+              <span class="label-title">⚡ Instant Book</span>
+              <span class="label-desc">Book without waiting for host approval</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Amenities Section -->
+      <section class="filter-group">
+        <h4 class="group-title">Amenities</h4>
+        <div class="amenities-grid">
+          <button
+            type="button"
+            *ngFor="let am of amenitiesList"
+            class="amenity-pill"
+            [class.amenity-pill--active]="isAmenitySelected(am)"
+            (click)="toggleAmenity(am)"
+          >
+            <span class="amenity-check" *ngIf="isAmenitySelected(am)">✓</span>
+            <span>{{ am }}</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Mobile Drawer Footer CTA -->
+    <div class="filters-footer">
+      <button type="button" class="btn-clear" (click)="resetAll()">Clear all</button>
+      <button type="button" class="btn-apply" (click)="onClose()">
+        Show results
+      </button>
+    </div>
+  </aside>
+</div>

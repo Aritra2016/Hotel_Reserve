@@ -1,0 +1,146 @@
+<div class="modal-backdrop" *ngIf="hotel" (click)="onClose()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <!-- Close Button -->
+    <button type="button" class="modal-close" (click)="onClose()" aria-label="Close dialog">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+
+    <div class="modal-content">
+      <!-- Gallery Column -->
+      <div class="gallery-col">
+        <div class="main-photo-wrapper">
+          <img [src]="images[activePhotoIndex]" [alt]="hotel.name" class="main-photo" appImgFallback />
+          <button
+            type="button"
+            class="modal-fav-btn"
+            [class.modal-fav-btn--active]="isFavorite"
+            (click)="toggleFavorite($event)"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" [attr.fill]="isFavorite ? 'var(--color-primary)' : 'rgba(0,0,0,0.4)'" stroke="white" stroke-width="1.8">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Thumbnails -->
+        <div class="thumbnail-row" *ngIf="images.length > 1">
+          <img
+            *ngFor="let img of images; let idx = index"
+            [src]="img"
+            [alt]="hotel.name"
+            class="thumbnail-img"
+            [class.thumbnail-img--active]="idx === activePhotoIndex"
+            (click)="selectPhoto(idx)"
+            appImgFallback
+          />
+        </div>
+      </div>
+
+      <!-- Info Column -->
+      <div class="info-col">
+        <!-- Header -->
+        <div class="info-header">
+          <div class="meta-row">
+            <span class="info-category">{{ hotel.category }}</span>
+            <span class="info-location">📍 {{ hotel.location }}</span>
+          </div>
+
+          <h2 class="info-title">{{ hotel.name }}</h2>
+
+          <div class="info-rating-row">
+            <div class="rating-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <span>{{ hotel.rating | number:'1.2-2' }}</span>
+            </div>
+            <span class="reviews-count">({{ hotel.reviewCount }} verified reviews)</span>
+            <span class="badge-superhost" *ngIf="hotel.isSuperhost">⭐ Superhost</span>
+          </div>
+        </div>
+
+        <!-- Property Specs -->
+        <div class="specs-bar">
+          <div class="spec-item">
+            <span class="spec-value">{{ hotel.maxGuests }}</span>
+            <span class="spec-label">Guests</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-value">{{ hotel.bedrooms }}</span>
+            <span class="spec-label">Bedrooms</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-value">{{ hotel.beds }}</span>
+            <span class="spec-label">Beds</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-value">{{ hotel.bathrooms }}</span>
+            <span class="spec-label">Baths</span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="description-section">
+          <h4>About this space</h4>
+          <p>{{ hotel.description }}</p>
+        </div>
+
+        <!-- Amenities -->
+        <div class="amenities-section">
+          <h4>Included Amenities</h4>
+          <div class="amenities-list">
+            <span class="amenity-badge" *ngFor="let am of hotel.amenities">
+              ✓ {{ am }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Host Card -->
+        <div class="host-section" *ngIf="hotel.host">
+          <img [src]="hotel.host.avatar" [alt]="hotel.host.name" class="host-avatar" />
+          <div class="host-details">
+            <h5>Hosted by {{ hotel.host.name }}</h5>
+            <p>{{ hotel.host.responseRate }}% response rate · Joined in {{ hotel.host.joinedYear }}</p>
+          </div>
+        </div>
+
+        <!-- Price Breakdown & Reserve Button -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <div>
+              <span class="pricing-rate">${{ hotel.price }}</span>
+              <span class="pricing-unit"> / night</span>
+            </div>
+            <span class="cancellation-badge" *ngIf="hotel.freeCancellation">
+              ✓ Free cancellation
+            </span>
+          </div>
+
+          <div class="breakdown-table">
+            <div class="breakdown-row">
+              <span>${{ hotel.price }} × {{ nights }} {{ nights === 1 ? 'night' : 'nights' }}</span>
+              <span>${{ stayTotal }}</span>
+            </div>
+            <div class="breakdown-row" *ngIf="hotel.cleaningFee">
+              <span>Cleaning fee</span>
+              <span>${{ hotel.cleaningFee }}</span>
+            </div>
+            <div class="breakdown-row" *ngIf="hotel.serviceFee">
+              <span>StayEase service fee</span>
+              <span>${{ hotel.serviceFee }}</span>
+            </div>
+            <div class="breakdown-row breakdown-row--total">
+              <span>Total before taxes</span>
+              <span>${{ grandTotal }}</span>
+            </div>
+          </div>
+
+          <button type="button" class="reserve-cta-btn" (click)="onReserve()">
+            Reserve Stay
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

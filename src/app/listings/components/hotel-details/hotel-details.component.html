@@ -1,0 +1,863 @@
+<div class="details-page" *ngIf="hotel; else loadingOrError">
+  <!-- Toast Notification -->
+  <div class="share-toast" *ngIf="showShareToast">
+    <span>🔗 Link copied to clipboard!</span>
+  </div>
+
+  <div class="container">
+    <!-- Breadcrumbs & Actions -->
+    <div class="details-header">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a routerLink="/" class="breadcrumb-item">Home</a>
+        <span class="breadcrumb-sep">/</span>
+        <a routerLink="/listings" class="breadcrumb-item">Listings</a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">{{ hotel.city }}</span>
+      </nav>
+
+      <div class="details-actions">
+        <button type="button" class="action-btn" (click)="onShare()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+            <polyline points="16 6 12 2 8 6"/>
+            <line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          <span>Share</span>
+        </button>
+
+        <button type="button" class="action-btn" [class.action-btn--active]="isFavorite" (click)="toggleFavorite()">
+          <svg width="18" height="18" viewBox="0 0 24 24" [attr.fill]="isFavorite ? 'var(--color-primary)' : 'none'" [attr.stroke]="isFavorite ? 'var(--color-primary)' : 'currentColor'" stroke-width="2">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <span>{{ isFavorite ? 'Saved' : 'Save' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Title & Top Meta -->
+    <div class="title-section">
+      <h1 class="hotel-title">{{ hotel.name }}</h1>
+      <div class="title-meta">
+        <div class="rating-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--color-primary)">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          <strong>{{ hotel.rating }}</strong>
+          <span class="reviews-link">({{ hotel.reviewCount }} reviews)</span>
+        </div>
+        <span class="meta-dot">·</span>
+        <span class="superhost-pill" *ngIf="hotel.isSuperhost">👑 Superhost</span>
+        <span class="meta-dot" *ngIf="hotel.isSuperhost">·</span>
+        <span class="location-text">📍 {{ hotel.location }}</span>
+      </div>
+    </div>
+
+    <!-- Photo Collage Gallery -->
+    <div class="gallery-collage">
+      <div class="gallery-main" (click)="openLightbox(0)">
+        <img [src]="galleryImages[0]" [alt]="hotel.name" appImgFallback />
+        <div class="gallery-overlay">
+          <span>Click to view photos</span>
+        </div>
+      </div>
+      <div class="gallery-thumbs">
+        <div
+          class="gallery-thumb"
+          *ngFor="let img of galleryImages.slice(1, 5); let i = index"
+          (click)="openLightbox(i + 1)"
+        >
+          <img [src]="img" [alt]="hotel.name" appImgFallback />
+        </div>
+      </div>
+      <button type="button" class="show-all-photos-btn" (click)="openLightbox(0)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span>Show all {{ galleryImages.length }} photos</span>
+      </button>
+    </div>
+
+    <!-- Main Content Layout (Left Details + Right Sticky Booking Widget) -->
+    <div class="details-layout">
+      <!-- Left Column: Specs, Host, Description, Amenities, Map, Reviews -->
+      <div class="details-main">
+        <!-- Room Specs Quick Bar -->
+        <div class="room-specs-bar">
+          <div class="spec-item">
+            <span class="spec-icon">👥</span>
+            <span>Up to <strong>{{ hotel.maxGuests }} guests</strong></span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-icon">🚪</span>
+            <span><strong>{{ hotel.bedrooms }}</strong> bedroom{{ hotel.bedrooms > 1 ? 's' : '' }}</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-icon">🛏️</span>
+            <span><strong>{{ hotel.beds }}</strong> bed{{ hotel.beds > 1 ? 's' : '' }}</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-icon">🚿</span>
+            <span><strong>{{ hotel.bathrooms }}</strong> bath{{ hotel.bathrooms > 1 ? 's' : '' }}</span>
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- Host Card -->
+        <div class="host-section" *ngIf="hotel.host">
+          <img [src]="hotel.host.avatar" [alt]="hotel.host.name" class="host-avatar" appImgFallback />
+          <div class="host-info">
+            <h3>Hosted by {{ hotel.host.name }}</h3>
+            <p class="host-sub">
+              <span *ngIf="hotel.host.isSuperhost">Superhost · </span>
+              <span>Joined in {{ hotel.host.joinedYear }} · </span>
+              <span>{{ hotel.host.responseRate }}% response rate</span>
+            </p>
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- Highlights List -->
+        <div class="highlights-list">
+          <div class="highlight-item" *ngIf="hotel.isSuperhost">
+            <span class="highlight-icon">👑</span>
+            <div class="highlight-text">
+              <h4>{{ hotel.host?.name || 'Host' }} is a Superhost</h4>
+              <p>Superhosts are experienced, highly rated hosts committed to providing great stays.</p>
+            </div>
+          </div>
+          <div class="highlight-item" *ngIf="hotel.freeCancellation">
+            <span class="highlight-icon">🗓️</span>
+            <div class="highlight-text">
+              <h4>Free cancellation</h4>
+              <p>Cancel up to 48 hours before check-in for a full refund.</p>
+            </div>
+          </div>
+          <div class="highlight-item" *ngIf="hotel.isInstantBook">
+            <span class="highlight-icon">⚡</span>
+            <div class="highlight-text">
+              <h4>Instant Confirmation</h4>
+              <p>Your reservation is confirmed immediately without waiting for host approval.</p>
+            </div>
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- About Description -->
+        <div class="description-section">
+          <h2>About this stay</h2>
+          <p class="tagline-quote">"{{ hotel.tagline }}"</p>
+          <p class="desc-body">{{ hotel.description }}</p>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- Categorized Amenities -->
+        <div class="amenities-section">
+          <h2>What this place offers</h2>
+          <div class="amenities-category-grid">
+            <div class="amenity-cat-block" *ngFor="let cat of amenitiesByCategory">
+              <h4 class="amenity-cat-title">
+                <span>{{ cat.icon }}</span> {{ cat.category }}
+              </h4>
+              <ul class="amenity-list">
+                <li *ngFor="let item of cat.items" class="amenity-li">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>{{ item }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- Reviews & Ratings Section -->
+        <div class="reviews-section">
+          <div class="reviews-header">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--color-primary)">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            <h2>{{ hotel.rating }} · {{ hotel.reviewCount }} reviews</h2>
+          </div>
+
+          <!-- Score Breakdown Grid -->
+          <div class="breakdown-grid">
+            <div class="breakdown-item" *ngFor="let item of ratingBreakdown">
+              <span class="breakdown-label">{{ item.category }}</span>
+              <div class="breakdown-bar-wrap">
+                <div class="breakdown-bar-fill" [style.width]="(+item.score / 5) * 100 + '%'"></div>
+              </div>
+              <span class="breakdown-score">{{ item.score }}</span>
+            </div>
+          </div>
+
+          <!-- Testimonial Cards -->
+          <div class="reviews-grid">
+            <div class="review-card" *ngFor="let rev of reviews">
+              <div class="review-user">
+                <img [src]="rev.avatar" [alt]="rev.author" class="review-avatar" appImgFallback />
+                <div>
+                  <h4>{{ rev.author }}</h4>
+                  <span class="review-date">{{ rev.date }}</span>
+                </div>
+              </div>
+              <p class="review-text">{{ rev.content }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: High-Visibility Sticky Booking / Reservation Widget -->
+      <div class="details-sidebar">
+        <div class="booking-card">
+          <!-- Rate Header -->
+          <div class="booking-card__header">
+            <div class="booking-rate">
+              <span class="booking-price">${{ hotel.price }}</span>
+              <span class="booking-unit"> / night</span>
+              <span class="discount-badge" *ngIf="hotel.discountPercent">
+                -{{ hotel.discountPercent }}% OFF
+              </span>
+            </div>
+            <div class="booking-rating">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--color-primary)">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              <span>{{ hotel.rating }}</span>
+            </div>
+          </div>
+
+          <!-- Dates & Guests Box -->
+          <div class="booking-form-box">
+            <div class="dates-row">
+              <div class="date-input-col">
+                <label>CHECK-IN</label>
+                <input
+                  type="date"
+                  [min]="minCheckInDate"
+                  [ngModel]="checkInDate"
+                  (ngModelChange)="onCheckInChange($event)"
+                />
+              </div>
+              <div class="date-input-col">
+                <label>CHECK-OUT</label>
+                <input
+                  type="date"
+                  [min]="minCheckOutDate"
+                  [ngModel]="checkOutDate"
+                  (ngModelChange)="onCheckOutChange($event)"
+                />
+              </div>
+            </div>
+
+            <!-- Guests Dropdown Trigger -->
+            <div class="guests-selector" (click)="isGuestsDropdownOpen = !isGuestsDropdownOpen">
+              <div class="guests-label-wrap">
+                <label>GUESTS</label>
+                <span class="guests-val">{{ totalGuestsLabel }}</span>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+
+              <!-- Guests Dropdown Menu -->
+              <div class="guests-menu" *ngIf="isGuestsDropdownOpen" (click)="$event.stopPropagation()">
+                <div class="stepper-row">
+                  <div>
+                    <span class="stepper-title">Adults</span>
+                    <span class="stepper-sub">Age 13+</span>
+                  </div>
+                  <div class="stepper-btns">
+                    <button type="button" (click)="updateGuests('adults', -1)" [disabled]="adultsCount <= 1">−</button>
+                    <span>{{ adultsCount }}</span>
+                    <button type="button" (click)="updateGuests('adults', 1)" [disabled]="totalGuestsCount >= hotel.maxGuests">+</button>
+                  </div>
+                </div>
+
+                <div class="stepper-row">
+                  <div>
+                    <span class="stepper-title">Children</span>
+                    <span class="stepper-sub">Ages 2–12</span>
+                  </div>
+                  <div class="stepper-btns">
+                    <button type="button" (click)="updateGuests('children', -1)" [disabled]="childrenCount <= 0">−</button>
+                    <span>{{ childrenCount }}</span>
+                    <button type="button" (click)="updateGuests('children', 1)" [disabled]="totalGuestsCount >= hotel.maxGuests">+</button>
+                  </div>
+                </div>
+
+                <div class="guests-menu-footer">
+                  <button type="button" class="btn-done" (click)="isGuestsDropdownOpen = false">Done</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bold, High-Visibility Reserve CTA Button -->
+          <button type="button" class="btn-reserve" (click)="openCheckoutModal()">
+            <span>Reserve / Book Now</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+
+          <p class="charge-note">You won't be charged yet</p>
+
+          <!-- Price Calculation Breakdown -->
+          <div class="price-breakdown">
+            <div class="price-row">
+              <span>${{ hotel.price }} × {{ calculatedNights }} nights</span>
+              <span>${{ basePriceTotal }}</span>
+            </div>
+
+            <div class="price-row" *ngIf="discountTotal > 0">
+              <span class="discount-label">Special Discount ({{ hotel.discountPercent }}%)</span>
+              <span class="discount-val">−${{ discountTotal }}</span>
+            </div>
+
+            <div class="price-row">
+              <span>Cleaning fee</span>
+              <span>${{ cleaningFeeTotal }}</span>
+            </div>
+
+            <div class="price-row">
+              <span>StayEase service fee</span>
+              <span>${{ serviceFeeTotal }}</span>
+            </div>
+
+            <hr class="price-divider" />
+
+            <div class="price-row price-row--total">
+              <strong>Total before taxes</strong>
+              <div class="price-totals-dual">
+                <span class="total-inr">₹{{ grandTotalInr }}</span>
+                <strong class="total-usd">${{ grandTotal }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="booking-guarantee">
+            <span>🛡️ <strong>StayEase & Razorpay Safe Pay</strong> Guarantee</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FULLSCREEN PHOTO LIGHTBOX MODAL ===== -->
+  <div class="lightbox-modal" *ngIf="isLightboxOpen" (click)="closeLightbox()">
+    <button type="button" class="lightbox-close" (click)="closeLightbox()">✕</button>
+    <div class="lightbox-content" (click)="$event.stopPropagation()">
+      <button type="button" class="lightbox-nav-btn lightbox-nav--prev" (click)="prevPhoto($event)">‹</button>
+      <img [src]="galleryImages[activePhotoIndex]" [alt]="hotel.name" class="lightbox-img" appImgFallback />
+      <button type="button" class="lightbox-nav-btn lightbox-nav--next" (click)="nextPhoto($event)">›</button>
+    </div>
+    <div class="lightbox-counter">
+      <span>{{ activePhotoIndex + 1 }} / {{ galleryImages.length }}</span>
+    </div>
+  </div>
+
+  <!-- ===== HIGH-VISIBILITY MULTI-STEP BOOKING & CHECKOUT MODAL ===== -->
+  <div class="checkout-modal-backdrop" *ngIf="isCheckoutModalOpen" (click)="closeCheckoutModal()">
+    <div class="checkout-modal-dialog" (click)="$event.stopPropagation()">
+      <!-- Close Button -->
+      <button type="button" class="checkout-close" (click)="closeCheckoutModal()" aria-label="Close dialog">✕</button>
+
+      <!-- Modal Steps Header -->
+      <div class="checkout-stepper" *ngIf="checkoutStep !== 'confirmed'">
+        <div class="stepper-step" [class.stepper-step--active]="checkoutStep === 'review'">
+          <span class="step-num">1</span>
+          <span class="step-label">Trip Review</span>
+        </div>
+        <div class="stepper-line"></div>
+        <div class="stepper-step" [class.stepper-step--active]="checkoutStep === 'guest_info'">
+          <span class="step-num">2</span>
+          <span class="step-label">Guest Details</span>
+        </div>
+        <div class="stepper-line"></div>
+        <div class="stepper-step" [class.stepper-step--active]="checkoutStep === 'payment'">
+          <span class="step-num">3</span>
+          <span class="step-label">Payment</span>
+        </div>
+      </div>
+
+      <!-- STEP 1: REVIEW TRIP -->
+      <div class="step-content" *ngIf="checkoutStep === 'review'">
+        <h2 class="step-heading">Review your trip</h2>
+
+        <div class="hotel-summary-card">
+          <img [src]="hotel.imageUrl" [alt]="hotel.name" class="summary-img" appImgFallback />
+          <div class="summary-info">
+            <span class="summary-category">{{ hotel.category }}</span>
+            <h3>{{ hotel.name }}</h3>
+            <p>📍 {{ hotel.location }}</p>
+            <span class="summary-rating">★ {{ hotel.rating }} ({{ hotel.reviewCount }} reviews)</span>
+          </div>
+        </div>
+
+        <div class="trip-details-grid">
+          <div class="trip-detail-card">
+            <span class="td-icon">📅</span>
+            <div>
+              <strong>Dates</strong>
+              <p>{{ checkInDate }} to {{ checkOutDate }} ({{ calculatedNights }} nights)</p>
+            </div>
+          </div>
+          <div class="trip-detail-card">
+            <span class="td-icon">👥</span>
+            <div>
+              <strong>Guests</strong>
+              <p>{{ totalGuestsLabel }} ({{ adultsCount }} adults, {{ childrenCount }} children)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="price-summary-box">
+          <div class="ps-row">
+            <span>Price ({{ calculatedNights }} nights)</span>
+            <span>${{ basePriceTotal }}</span>
+          </div>
+          <div class="ps-row" *ngIf="discountTotal > 0">
+            <span class="discount-label">Discount ({{ hotel.discountPercent }}%)</span>
+            <span class="discount-val">−${{ discountTotal }}</span>
+          </div>
+          <div class="ps-row">
+            <span>Cleaning & service fees</span>
+            <span>${{ cleaningFeeTotal + serviceFeeTotal }}</span>
+          </div>
+          <hr class="ps-divider" />
+          <div class="ps-row ps-row--total">
+            <strong>Total Due</strong>
+            <div class="ps-dual-price">
+              <span class="ps-inr">₹{{ grandTotalInr }}</span>
+              <strong class="ps-usd">${{ grandTotal }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button type="button" class="btn-step-next" (click)="goToCheckoutStep('guest_info')">
+            <span>Continue to Guest Details</span> →
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: GUEST INFORMATION FORM -->
+      <div class="step-content" *ngIf="checkoutStep === 'guest_info'">
+        <h2 class="step-heading">Guest Information</h2>
+        <p class="step-desc">Enter contact details for the primary guest on this reservation.</p>
+
+        <form [formGroup]="checkoutForm" class="guest-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>First Name <span class="req">*</span></label>
+              <input type="text" formControlName="firstName" placeholder="e.g. John" />
+              <span class="form-error" *ngIf="checkoutForm.get('firstName')?.touched && checkoutForm.get('firstName')?.invalid">
+                First name is required
+              </span>
+            </div>
+            <div class="form-group">
+              <label>Last Name <span class="req">*</span></label>
+              <input type="text" formControlName="lastName" placeholder="e.g. Doe" />
+              <span class="form-error" *ngIf="checkoutForm.get('lastName')?.touched && checkoutForm.get('lastName')?.invalid">
+                Last name is required
+              </span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email Address <span class="req">*</span></label>
+              <input type="email" formControlName="email" placeholder="john.doe@example.com" />
+              <span class="form-error" *ngIf="checkoutForm.get('email')?.touched && checkoutForm.get('email')?.invalid">
+                Valid email is required for confirmation receipt
+              </span>
+            </div>
+            <div class="form-group">
+              <label>Mobile Number (for Razorpay OTP) <span class="req">*</span></label>
+              <input type="tel" formControlName="phone" placeholder="+91 98765 43210" />
+              <span class="form-error" *ngIf="checkoutForm.get('phone')?.touched && checkoutForm.get('phone')?.invalid">
+                Mobile number is required
+              </span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Special Requests (Optional)</label>
+            <textarea formControlName="specialRequests" rows="3" placeholder="Early check-in, dietary restrictions, quiet room, etc."></textarea>
+          </div>
+
+          <!-- Dynamic Additional Guests (FormArray) -->
+          <div class="additional-guests-section" *ngIf="adultsCount > 1">
+            <div class="ag-header">
+              <h4>Additional Guest Names (Optional)</h4>
+              <button type="button" class="btn-add-guest" (click)="addAdditionalGuest()">+ Add Guest</button>
+            </div>
+
+            <div formArrayName="additionalGuests">
+              <div
+                *ngFor="let g of additionalGuestsFormArray.controls; let idx = index"
+                [formGroupName]="idx"
+                class="ag-row"
+              >
+                <input type="text" formControlName="fullName" [placeholder]="'Guest #' + (idx + 2) + ' Full Name'" />
+                <button type="button" class="btn-remove-guest" (click)="removeAdditionalGuest(idx)">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button type="button" class="btn-step-back" (click)="goToCheckoutStep('review')">← Back</button>
+            <button type="button" class="btn-step-next" (click)="goToCheckoutStep('payment')">
+              <span>Continue to Payment</span> →
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- STEP 3: HIGH-VISIBILITY PAYMENT METHOD & RAZORPAY SELECTION -->
+      <div class="step-content" *ngIf="checkoutStep === 'payment'">
+        <div class="payment-step-header">
+          <div>
+            <h2 class="step-heading">Select Payment Method</h2>
+            <p class="step-desc">All transactions are encrypted with 256-bit SSL & Razorpay Protection.</p>
+          </div>
+          <div class="razorpay-trust-badge">
+            <span class="rzp-shield">🛡️</span>
+            <span>Razorpay Verified</span>
+          </div>
+        </div>
+
+        <form [formGroup]="checkoutForm" (ngSubmit)="submitDirectPayment()" class="payment-form">
+          <!-- Prominent Payment Method Selection Tiles -->
+          <div class="payment-tiles-grid">
+            <!-- 1. RAZORPAY (RECOMMENDED) -->
+            <label
+              class="payment-tile payment-tile--featured"
+              [class.payment-tile--active]="checkoutForm.get('paymentMethod')?.value === 'razorpay'"
+            >
+              <input type="radio" formControlName="paymentMethod" value="razorpay" />
+              <div class="tile-content">
+                <div class="tile-header">
+                  <div class="tile-brand">
+                    <span class="rzp-logo-badge">Razorpay</span>
+                    <span class="rec-badge">RECOMMENDED</span>
+                  </div>
+                  <div class="tile-icons">
+                    <span>UPI</span> · <span>GPay</span> · <span>Cards</span> · <span>NetBanking</span>
+                  </div>
+                </div>
+                <p class="tile-desc">Instant payment with <strong>Mobile OTP</strong> verification. Fast & 100% secure.</p>
+              </div>
+              <div class="tile-radio-circle"></div>
+            </label>
+
+            <!-- 2. DIRECT CREDIT / DEBIT CARD -->
+            <label
+              class="payment-tile"
+              [class.payment-tile--active]="checkoutForm.get('paymentMethod')?.value === 'credit_card'"
+            >
+              <input type="radio" formControlName="paymentMethod" value="credit_card" />
+              <div class="tile-content">
+                <div class="tile-header">
+                  <span class="tile-title">💳 Credit / Debit Card</span>
+                  <div class="tile-card-brands">
+                    <span>Visa</span> · <span>Mastercard</span> · <span>Amex</span>
+                  </div>
+                </div>
+                <p class="tile-desc">Direct card billing with standard 3D Secure verification.</p>
+              </div>
+              <div class="tile-radio-circle"></div>
+            </label>
+
+            <!-- 3. PAYPAL & ALTERNATE -->
+            <label
+              class="payment-tile"
+              [class.payment-tile--active]="checkoutForm.get('paymentMethod')?.value === 'paypal'"
+            >
+              <input type="radio" formControlName="paymentMethod" value="paypal" />
+              <div class="tile-content">
+                <span class="tile-title">🅿️ PayPal</span>
+                <p class="tile-desc">Pay directly using your global PayPal balance.</p>
+              </div>
+              <div class="tile-radio-circle"></div>
+            </label>
+          </div>
+
+          <!-- Razorpay Highlighted CTA Box -->
+          <div class="razorpay-callout-box" *ngIf="checkoutForm.get('paymentMethod')?.value === 'razorpay'">
+            <div class="rcb-top">
+              <div class="rcb-meta">
+                <span class="rcb-label">Amount Payable:</span>
+                <div class="rcb-prices">
+                  <span class="rcb-inr">₹{{ grandTotalInr }}</span>
+                  <span class="rcb-usd">(${{ grandTotal }} USD)</span>
+                </div>
+              </div>
+              <div class="rcb-mobile-info">
+                <span class="rcb-label">Mobile for OTP:</span>
+                <strong class="rcb-phone">{{ checkoutForm.get('phone')?.value || '+91 98765 43210' }}</strong>
+              </div>
+            </div>
+
+            <button type="button" class="btn-razorpay-launch" (click)="openRazorpayGateway()">
+              <span class="rzp-btn-icon">⚡</span>
+              <span>Proceed to Razorpay (Mobile OTP)</span>
+              <span class="rzp-btn-arrow">→</span>
+            </button>
+          </div>
+
+          <!-- Credit Card Input Fields (High Visibility) -->
+          <div class="cc-card-fields-box" *ngIf="checkoutForm.get('paymentMethod')?.value === 'credit_card'">
+            <h4 class="cc-box-title">Cardholder & Card Information</h4>
+
+            <div class="form-group">
+              <label>Cardholder Name <span class="req">*</span></label>
+              <input type="text" formControlName="cardHolder" placeholder="Name as printed on card" />
+              <span class="form-error" *ngIf="checkoutForm.get('cardHolder')?.touched && checkoutForm.get('cardHolder')?.invalid">
+                Cardholder name is required
+              </span>
+            </div>
+
+            <div class="form-group">
+              <label>Card Number <span class="req">*</span></label>
+              <input
+                type="text"
+                formControlName="cardNumber"
+                placeholder="4568 8965 8956 1032"
+                maxlength="19"
+                (input)="onCardNumberInput($event)"
+              />
+              <span class="form-error" *ngIf="checkoutForm.get('cardNumber')?.touched && checkoutForm.get('cardNumber')?.invalid">
+                Enter a valid 16-digit card number
+              </span>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Expiration (MM/YY) <span class="req">*</span></label>
+                <input
+                  type="text"
+                  formControlName="expiryDate"
+                  placeholder="10/28"
+                  maxlength="5"
+                  (input)="onExpiryInput($event)"
+                />
+                <span class="form-error" *ngIf="checkoutForm.get('expiryDate')?.touched && checkoutForm.get('expiryDate')?.invalid">
+                  Valid MM/YY required
+                </span>
+              </div>
+              <div class="form-group">
+                <label>CVV / CVC <span class="req">*</span></label>
+                <input type="password" formControlName="cvv" placeholder="•••" maxlength="4" />
+                <span class="form-error" *ngIf="checkoutForm.get('cvv')?.touched && checkoutForm.get('cvv')?.invalid">
+                  3 or 4 digit CVV required
+                </span>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-direct-pay" [disabled]="isProcessingPayment">
+              <span *ngIf="!isProcessingPayment">Pay ${{ grandTotal }} via Card</span>
+              <span *ngIf="isProcessingPayment">Processing Card Payment... ⏳</span>
+            </button>
+          </div>
+
+          <!-- Total Summary Bar -->
+          <div class="final-pay-summary">
+            <div class="fps-row">
+              <span>Total to be charged now:</span>
+              <div class="fps-dual">
+                <span class="fps-inr">₹{{ grandTotalInr }}</span>
+                <strong class="fps-total">${{ grandTotal }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button type="button" class="btn-step-back" (click)="goToCheckoutStep('guest_info')">← Back to Guests</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- STEP 4: CONFIRMED BOOKING RECEIPT -->
+      <div class="step-content confirmation-screen" *ngIf="checkoutStep === 'confirmed' && confirmedBooking">
+        <div class="conf-badge-wrap">
+          <div class="conf-icon">✓</div>
+        </div>
+        <h2 class="conf-title">Reservation Confirmed!</h2>
+        <p class="conf-sub">
+          Payment received via <strong>{{ confirmedBooking.request.payment.paymentMethod === 'razorpay' ? 'Razorpay' : 'Card' }}</strong>. Confirmation sent to <strong>{{ confirmedBooking.request.primaryGuest.email }}</strong>
+        </p>
+
+        <div class="receipt-card">
+          <div class="receipt-header">
+            <div>
+              <span class="receipt-label">BOOKING REFERENCE</span>
+              <h3 class="receipt-code">{{ confirmedBooking.bookingId }}</h3>
+            </div>
+            <span class="receipt-status-pill">CONFIRMED</span>
+          </div>
+
+          <div class="receipt-body">
+            <div class="rc-item">
+              <span>Property:</span>
+              <strong>{{ confirmedBooking.request.hotelName }}</strong>
+            </div>
+            <div class="rc-item">
+              <span>Location:</span>
+              <span>{{ confirmedBooking.request.hotelLocation }}</span>
+            </div>
+            <div class="rc-item">
+              <span>Check-in:</span>
+              <strong>{{ confirmedBooking.request.checkIn }}</strong>
+            </div>
+            <div class="rc-item">
+              <span>Check-out:</span>
+              <strong>{{ confirmedBooking.request.checkOut }} ({{ confirmedBooking.request.nights }} nights)</strong>
+            </div>
+            <div class="rc-item">
+              <span>Guests:</span>
+              <span>{{ confirmedBooking.request.guestsCount }} guest(s)</span>
+            </div>
+            <div class="rc-item" *ngIf="confirmedBooking.request.payment.razorpayPaymentId">
+              <span>Razorpay Transaction ID:</span>
+              <code class="rzp-tx-code">{{ confirmedBooking.request.payment.razorpayPaymentId }}</code>
+            </div>
+            <hr class="rc-divider" />
+            <div class="rc-item rc-item--total">
+              <span>Total Paid:</span>
+              <div class="rc-dual-price">
+                <span class="rc-inr">₹{{ confirmedBooking.request.grandTotalInr }}</span>
+                <strong>${{ confirmedBooking.request.grandTotal }} USD</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="conf-actions">
+          <button type="button" class="btn-conf-home" (click)="goToHome()">Return to Home</button>
+          <button type="button" class="btn-conf-listings" (click)="goBackToListings()">Explore More Stays</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RAZORPAY SANDBOX GATEWAY MODAL (WITH MOBILE OTP VERIFICATION) ===== -->
+  <div class="razorpay-gateway-backdrop" *ngIf="isRazorpayModalOpen" (click)="isRazorpayModalOpen = false">
+    <div class="razorpay-gateway-modal" (click)="$event.stopPropagation()">
+      <!-- Razorpay Top Banner -->
+      <div class="rzp-modal-header">
+        <div class="rzp-logo-group">
+          <div class="rzp-symbol">R</div>
+          <div class="rzp-brand-text">
+            <span class="rzp-brand-title">Razorpay</span>
+            <span class="rzp-brand-tagline">Trusted by 80M+ Businesses</span>
+          </div>
+        </div>
+        <div class="rzp-header-right">
+          <span class="rzp-test-badge">SANDBOX TEST MODE</span>
+          <button type="button" class="rzp-close-btn" (click)="isRazorpayModalOpen = false">✕</button>
+        </div>
+      </div>
+
+      <!-- Order Info Bar -->
+      <div class="rzp-order-bar">
+        <div class="rzp-order-info">
+          <span class="rzp-order-for">Payment for: <strong>StayEase · {{ hotel.name }}</strong></span>
+          <span class="rzp-order-id">Order ID: {{ razorpayOrderId }}</span>
+        </div>
+        <div class="rzp-order-amount">
+          <span class="rzp-amount-inr">₹{{ grandTotalInr }}</span>
+          <span class="rzp-amount-usd">(${{ grandTotal }} USD)</span>
+        </div>
+      </div>
+
+      <!-- Razorpay Mobile OTP Card -->
+      <div class="rzp-otp-card">
+        <div class="rzp-otp-header">
+          <div class="rzp-phone-icon">📱</div>
+          <div>
+            <h4>Mobile OTP Verification</h4>
+            <p>An authentication code was sent to <strong>{{ mobileNumber }}</strong></p>
+          </div>
+        </div>
+
+        <!-- Demo OTP Helper Tag -->
+        <div class="rzp-demo-helper" (click)="autoFillTestOtp()">
+          <span>🔑 Demo Sandbox OTP: <strong>123456</strong></span>
+          <button type="button" class="btn-autofill-otp">Auto-Fill</button>
+        </div>
+
+        <!-- OTP Input Field -->
+        <div class="rzp-input-wrap">
+          <label>ENTER 6-DIGIT OTP</label>
+          <input
+            type="text"
+            [(ngModel)]="mobileOtp"
+            placeholder="• • • • • •"
+            maxlength="6"
+            class="rzp-otp-input"
+            autofocus
+          />
+        </div>
+
+        <!-- Error Message -->
+        <div class="rzp-error-box" *ngIf="otpError">
+          <span>⚠️ {{ otpError }}</span>
+        </div>
+
+        <!-- Resend OTP Timer -->
+        <div class="rzp-resend-row">
+          <span *ngIf="otpCountdown > 0" class="rzp-timer">Resend OTP in <strong>{{ otpCountdown }}s</strong></span>
+          <button *ngIf="otpCountdown === 0" type="button" class="btn-resend-otp" (click)="sendRazorpayOtp()">
+            🔄 Resend OTP
+          </button>
+        </div>
+
+        <!-- Verify & Pay Button -->
+        <button
+          type="button"
+          class="btn-rzp-verify-pay"
+          [disabled]="isVerifyingOtp"
+          (click)="verifyRazorpayOtpAndPay()"
+        >
+          <span *ngIf="!isVerifyingOtp">✓ Verify OTP & Pay ₹{{ grandTotalInr }}</span>
+          <span *ngIf="isVerifyingOtp">Verifying OTP with Bank... ⏳</span>
+        </button>
+
+        <div class="rzp-security-footer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Secured with 256-bit Encryption & RBI Compliant 2FA</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingOrError>
+  <div class="details-loading-container container" *ngIf="isLoading">
+    <div class="skeleton-title"></div>
+    <div class="skeleton-gallery"></div>
+    <div class="skeleton-layout">
+      <div class="skeleton-left"></div>
+      <div class="skeleton-right"></div>
+    </div>
+  </div>
+  <div class="not-found-container container" *ngIf="!isLoading && !hotel">
+    <h2>Listing not found</h2>
+    <p>We couldn't find the requested property. It may have been removed or updated.</p>
+    <a routerLink="/listings" class="btn-primary">Browse All Listings</a>
+  </div>
+</ng-template>

@@ -1,0 +1,362 @@
+<!-- ===== TOP COMPACT SEARCH & CATEGORY BAR ===== -->
+<div class="search-refine-header">
+  <div class="container search-refine-inner">
+    <!-- Compact Search Capsule Trigger -->
+    <div class="search-capsule" (click)="toggleSearchDropdown()">
+      <div class="capsule-part">
+        <span class="capsule-label">Where</span>
+        <span class="capsule-value">{{ filters.location ? filters.location : 'Anywhere' }}</span>
+      </div>
+      <div class="capsule-divider"></div>
+      <div class="capsule-part">
+        <span class="capsule-label">Dates</span>
+        <span class="capsule-value" *ngIf="filters.checkIn && filters.checkOut; else anyWeek">
+          {{ filters.checkIn | slice:5 }} - {{ filters.checkOut | slice:5 }}
+        </span>
+        <ng-template #anyWeek>
+          <span class="capsule-value">Anytime</span>
+        </ng-template>
+      </div>
+      <div class="capsule-divider"></div>
+      <div class="capsule-part">
+        <span class="capsule-label">Who</span>
+        <span class="capsule-value">{{ (filters.guests || 1) > 1 ? filters.guests + ' guests' : '1 guest' }}</span>
+      </div>
+
+      <button type="button" class="capsule-search-btn" aria-label="Refine search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round">
+          <circle cx="11" cy="11" r="6"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Quick Category Horizontal Pills Ribbon -->
+    <div class="category-ribbon">
+      <button
+        *ngFor="let cat of categories"
+        type="button"
+        class="cat-chip"
+        [class.cat-chip--active]="filters.category === cat.value"
+        (click)="onSelectCategory(cat.value)"
+      >
+        <span class="cat-chip__icon">{{ cat.icon }}</span>
+        <span class="cat-chip__label">{{ cat.label }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Refinement Dropdown Modal -->
+  <div class="refine-dropdown" *ngIf="isSearchDropdownOpen" (click)="$event.stopPropagation()">
+    <div class="refine-form">
+      <div class="refine-field">
+        <label>Destination</label>
+        <input
+          type="text"
+          [(ngModel)]="searchLocation"
+          placeholder="Where to? (e.g. Miami, Paris, Bali)"
+        />
+      </div>
+
+      <div class="refine-field">
+        <label>Check In</label>
+        <input type="date" [(ngModel)]="searchCheckIn" />
+      </div>
+
+      <div class="refine-field">
+        <label>Check Out</label>
+        <input type="date" [(ngModel)]="searchCheckOut" />
+      </div>
+
+      <div class="refine-field">
+        <label>Guests</label>
+        <input type="number" min="1" max="16" [(ngModel)]="searchGuests" />
+      </div>
+
+      <div class="refine-actions">
+        <button type="button" class="btn-cancel" (click)="isSearchDropdownOpen = false">
+          Cancel
+        </button>
+        <button type="button" class="btn-submit" (click)="onRefineSearch()">
+          Update Search
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOOLBAR: STATS, ACTIVE PILLS, SORT & VIEW TOGGLES ===== -->
+<div class="toolbar-section">
+  <div class="container toolbar-inner">
+    <!-- Left: Summary & Active Tags -->
+    <div class="toolbar-left">
+      <div class="results-count-title">
+        <h1 class="results-heading">
+          <span *ngIf="result">{{ result.totalCount }} stays</span>
+          <span *ngIf="filters.location"> in {{ filters.location }}</span>
+        </h1>
+        <p class="results-subtext" *ngIf="filters.checkIn && filters.checkOut">
+          {{ filters.checkIn }} to {{ filters.checkOut }} · {{ calculatedNights }} {{ calculatedNights === 1 ? 'night' : 'nights' }} · {{ filters.guests || 1 }} {{ (filters.guests || 1) === 1 ? 'guest' : 'guests' }}
+        </p>
+      </div>
+
+      <!-- Active Filters Quick Removable Chips -->
+      <div class="active-chips-row" *ngIf="activeFilterCount > 0">
+        <span class="active-chip" *ngIf="filters.category && filters.category !== 'all'">
+          Category: {{ filters.category }}
+          <button (click)="removeFilter('category')">×</button>
+        </span>
+
+        <span class="active-chip" *ngIf="filters.minPrice || filters.maxPrice">
+          Price: ${{ filters.minPrice || minPriceBound }} - ${{ filters.maxPrice || maxPriceBound }}
+          <button (click)="removeFilter('price')">×</button>
+        </span>
+
+        <span class="active-chip" *ngIf="filters.minRating">
+          Rating: {{ filters.minRating }}★+
+          <button (click)="removeFilter('rating')">×</button>
+        </span>
+
+        <span class="active-chip" *ngFor="let am of filters.amenities">
+          {{ am }}
+          <button (click)="removeFilter('amenity', am)">×</button>
+        </span>
+
+        <span class="active-chip" *ngIf="filters.superhostOnly">
+          ⭐ Superhost
+          <button (click)="removeFilter('superhost')">×</button>
+        </span>
+
+        <span class="active-chip" *ngIf="filters.freeCancellationOnly">
+          Free Cancellation
+          <button (click)="removeFilter('cancellation')">×</button>
+        </span>
+
+        <span class="active-chip" *ngIf="filters.instantBookOnly">
+          Instant Book
+          <button (click)="removeFilter('instant')">×</button>
+        </span>
+
+        <button class="clear-all-chips" (click)="resetAllFilters()">
+          Clear all
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Filters Button, Sort Selector, and View Mode Switcher -->
+    <div class="toolbar-right">
+      <!-- Filter Button for Drawer / Mobile -->
+      <button
+        type="button"
+        class="filter-drawer-toggle"
+        (click)="toggleFilterDrawer()"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="4" y1="21" x2="4" y2="14"></line>
+          <line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line>
+          <line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line>
+          <line x1="9" y1="8" x2="15" y2="8"></line>
+          <line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
+        <span>Filters</span>
+        <span class="filter-count-badge" *ngIf="activeFilterCount > 0">{{ activeFilterCount }}</span>
+      </button>
+
+      <!-- Sort Dropdown -->
+      <div class="sort-selector">
+        <label for="sortSelect">Sort by:</label>
+        <select
+          id="sortSelect"
+          [ngModel]="filters.sortBy"
+          (ngModelChange)="onSortChange($event)"
+        >
+          <option value="recommended">Recommended</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="rating-desc">Highest Rated</option>
+          <option value="reviews-desc">Most Reviewed</option>
+        </select>
+      </div>
+
+      <!-- View Mode Buttons -->
+      <div class="view-switcher">
+        <button
+          type="button"
+          class="view-btn"
+          [class.view-btn--active]="viewMode === 'grid'"
+          (click)="setViewMode('grid')"
+          title="Grid View"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          class="view-btn"
+          [class.view-btn--active]="viewMode === 'list'"
+          (click)="setViewMode('list')"
+          title="List View"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          class="view-btn"
+          [class.view-btn--active]="viewMode === 'map'"
+          (click)="setViewMode('map')"
+          title="Split Map View"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+          <span class="view-btn__text">Map</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN CONTENT CONTAINER ===== -->
+<div class="container listings-layout" [class.listings-layout--map]="viewMode === 'map'">
+  <!-- Sidebar Filters (Visible in Grid/List on Desktop) -->
+  <div class="sidebar-filters-col" *ngIf="viewMode !== 'map'">
+    <app-hotel-filters
+      [filters]="filters"
+      [minBound]="minPriceBound"
+      [maxBound]="maxPriceBound"
+      (filtersChange)="onFiltersChanged($event)"
+    ></app-hotel-filters>
+  </div>
+
+  <!-- Listings Stream Column -->
+  <div class="listings-results-col">
+    <!-- Loading Shimmer Skeletons -->
+    <div
+      *ngIf="isLoading"
+      [ngClass]="{
+        'hotels-grid': viewMode === 'grid' || viewMode === 'map',
+        'hotels-list': viewMode === 'list'
+      }"
+    >
+      <div class="skeleton-card" *ngFor="let i of [1,2,3,4,5,6]">
+        <div class="skeleton skeleton--img"></div>
+        <div class="skeleton-card__body">
+          <div class="skeleton skeleton--line skeleton--short"></div>
+          <div class="skeleton skeleton--line"></div>
+          <div class="skeleton skeleton--line skeleton--medium"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading && hotels.length === 0">
+      <div class="empty-icon">🏝️</div>
+      <h3>No stays found matching your criteria</h3>
+      <p>Try clearing some filters or searching for another destination to explore available hotels.</p>
+      <button type="button" class="btn-primary" (click)="resetAllFilters()">
+        Reset all filters
+      </button>
+    </div>
+
+    <!-- Hotels Cards Grid / List -->
+    <div
+      *ngIf="!isLoading && hotels.length > 0"
+      [ngClass]="{
+        'hotels-grid': viewMode === 'grid' || viewMode === 'map',
+        'hotels-list': viewMode === 'list'
+      }"
+    >
+      <app-hotel-card
+        *ngFor="let hotel of hotels; trackBy: trackByHotel"
+        [hotel]="hotel"
+        [isHorizontal]="viewMode === 'list'"
+        [nights]="calculatedNights"
+        [isHighlighted]="hoveredHotelId === hotel.id || selectedHotelId === hotel.id"
+        (cardClick)="navigateToListing($event)"
+        (quickView)="openQuickView($event)"
+        (cardHover)="onHotelHover($event)"
+      ></app-hotel-card>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-bar" *ngIf="!isLoading && result && result.totalPages > 1">
+      <button
+        type="button"
+        class="page-nav-btn"
+        [disabled]="result.page <= 1"
+        (click)="goToPage(result.page - 1)"
+      >
+        ← Previous
+      </button>
+
+      <div class="page-numbers">
+        <button
+          *ngFor="let p of [].constructor(result.totalPages); let i = index"
+          type="button"
+          class="page-num-btn"
+          [class.page-num-btn--active]="result.page === (i + 1)"
+          (click)="goToPage(i + 1)"
+        >
+          {{ i + 1 }}
+        </button>
+      </div>
+
+      <button
+        type="button"
+        class="page-nav-btn"
+        [disabled]="result.page >= result.totalPages"
+        (click)="goToPage(result.page + 1)"
+      >
+        Next →
+      </button>
+    </div>
+  </div>
+
+  <!-- Map Column (Split View) -->
+  <div class="map-col" *ngIf="viewMode === 'map'">
+    <app-hotel-map
+      [hotels]="hotels"
+      [hoveredHotelId]="hoveredHotelId"
+      [selectedHotelId]="selectedHotelId"
+      (markerClick)="onMapMarkerClick($event)"
+      (viewHotel)="navigateToListing($event)"
+    ></app-hotel-map>
+  </div>
+</div>
+
+<!-- ===== MOBILE FILTER DRAWER COMPONENT ===== -->
+<app-hotel-filters
+  [filters]="filters"
+  [minBound]="minPriceBound"
+  [maxBound]="maxPriceBound"
+  [isOpen]="isFilterDrawerOpen"
+  (filtersChange)="onFiltersChanged($event)"
+  (closeDrawer)="isFilterDrawerOpen = false"
+></app-hotel-filters>
+
+<!-- ===== QUICK VIEW MODAL COMPONENT ===== -->
+<app-hotel-quick-view
+  [hotel]="selectedHotelForQuickView"
+  [nights]="calculatedNights"
+  [guests]="filters.guests || 1"
+  (close)="closeQuickView()"
+  (reserve)="navigateToListing($event)"
+></app-hotel-quick-view>

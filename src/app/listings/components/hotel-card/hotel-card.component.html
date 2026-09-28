@@ -1,0 +1,165 @@
+<article
+  class="hotel-card"
+  [class.hotel-card--horizontal]="isHorizontal"
+  [class.hotel-card--highlighted]="isHighlighted"
+  (click)="onCardClick()"
+  (mouseenter)="onMouseEnter()"
+  (mouseleave)="onMouseLeave()"
+>
+  <!-- Image Carousel -->
+  <div class="hotel-card__media">
+    <img
+      [src]="images[currentImageIndex]"
+      [alt]="hotel.name"
+      class="hotel-card__image"
+      loading="lazy"
+      appImgFallback
+    />
+
+    <!-- Carousel Prev/Next Controls -->
+    <button
+      *ngIf="images.length > 1"
+      type="button"
+      class="carousel-btn carousel-btn--prev"
+      (click)="prevImage($event)"
+      aria-label="Previous image"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+
+    <button
+      *ngIf="images.length > 1"
+      type="button"
+      class="carousel-btn carousel-btn--next"
+      (click)="nextImage($event)"
+      aria-label="Next image"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+
+    <!-- Carousel Dots -->
+    <div class="carousel-dots" *ngIf="images.length > 1">
+      <span
+        *ngFor="let img of images; let idx = index"
+        class="carousel-dot"
+        [class.carousel-dot--active]="idx === currentImageIndex"
+        (click)="selectImage(idx, $event)"
+      ></span>
+    </div>
+
+    <!-- Favorite Wishlist Button -->
+    <button
+      type="button"
+      class="favorite-btn"
+      [class.favorite-btn--active]="isFavorite"
+      (click)="toggleFavorite($event)"
+      [attr.aria-label]="isFavorite ? 'Remove from wishlist' : 'Save to wishlist'"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" [attr.fill]="isFavorite ? 'var(--color-primary)' : 'rgba(0,0,0,0.4)'" stroke="white" stroke-width="1.8">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+    </button>
+
+    <!-- Badges -->
+    <div class="badge-stack">
+      <span class="card-badge card-badge--superhost" *ngIf="hotel.isSuperhost">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4h7.6l-6.1 4.5 2.3 7.1-6.2-4.6-6.2 4.6 2.3-7.1-6.1-4.5h7.6z"/></svg>
+        Superhost
+      </span>
+      <span class="card-badge card-badge--featured" *ngIf="hotel.isFeatured && !hotel.isSuperhost">
+        Featured
+      </span>
+      <span class="card-badge card-badge--discount" *ngIf="hotel.discountPercent">
+        {{ hotel.discountPercent }}% OFF
+      </span>
+    </div>
+
+    <!-- Quick View Trigger Pill -->
+    <button
+      type="button"
+      class="quick-view-btn"
+      (click)="onQuickView($event)"
+      title="Quick View Details"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+      <span>Quick View</span>
+    </button>
+  </div>
+
+  <!-- Body Content -->
+  <div class="hotel-card__body">
+    <div class="hotel-card__top">
+      <span class="hotel-card__category">{{ hotel.category }} · {{ hotel.city }}, {{ hotel.country }}</span>
+      <div class="hotel-card__rating">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--color-primary)">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        <span class="rating-value">{{ hotel.rating | number:'1.2-2' }}</span>
+        <span class="review-count">({{ hotel.reviewCount }})</span>
+      </div>
+    </div>
+
+    <h3 class="hotel-card__title">{{ hotel.name }}</h3>
+    <p class="hotel-card__tagline" *ngIf="hotel.tagline">{{ hotel.tagline }}</p>
+
+    <!-- Specs Summary -->
+    <div class="hotel-card__specs">
+      <span>{{ hotel.maxGuests }} guests</span>
+      <span class="spec-dot">·</span>
+      <span>{{ hotel.bedrooms }} {{ hotel.bedrooms === 1 ? 'bedroom' : 'bedrooms' }}</span>
+      <span class="spec-dot">·</span>
+      <span>{{ hotel.beds }} {{ hotel.beds === 1 ? 'bed' : 'beds' }}</span>
+      <span class="spec-dot">·</span>
+      <span>{{ hotel.bathrooms }} {{ hotel.bathrooms === 1 ? 'bath' : 'baths' }}</span>
+    </div>
+
+    <!-- Amenities Chips -->
+    <div class="hotel-card__amenities">
+      <span class="amenity-chip" *ngFor="let am of hotel.amenities.slice(0, 3)">
+        {{ am }}
+      </span>
+      <span class="amenity-chip amenity-chip--more" *ngIf="hotel.amenities.length > 3">
+        +{{ hotel.amenities.length - 3 }} more
+      </span>
+    </div>
+
+    <!-- Perks Row -->
+    <div class="hotel-card__perks" *ngIf="hotel.freeCancellation || hotel.isInstantBook">
+      <span class="perk perk--cancel" *ngIf="hotel.freeCancellation">
+        ✓ Free cancellation
+      </span>
+      <span class="perk perk--instant" *ngIf="hotel.isInstantBook">
+        ⚡ Instant book
+      </span>
+    </div>
+
+    <!-- Footer Pricing & CTA -->
+    <div class="hotel-card__footer">
+      <div class="hotel-card__pricing">
+        <div class="price-row">
+          <span class="original-price" *ngIf="hotel.originalPrice">${{ hotel.originalPrice }}</span>
+          <span class="current-price">${{ hotel.price }}</span>
+          <span class="price-period">/ night</span>
+        </div>
+        <span class="total-price" *ngIf="nights > 1">
+          ${{ totalStayPrice }} total for {{ nights }} nights
+        </span>
+      </div>
+
+      <button type="button" class="book-now-btn" (click)="onCardClick()">
+        <span>Details</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </button>
+    </div>
+  </div>
+</article>
