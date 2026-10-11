@@ -1,0 +1,546 @@
+openapi: 3.0.3
+info:
+  title: StayEase Hotel Reservation API Specification
+  description: >
+    Official OpenAPI / Swagger documentation for the StayEase Hotel Reservation System.
+    Includes hotel searches, property details, destinations, user authentication, and bookings.
+  version: 1.0.0
+  contact:
+    name: StayEase API Engineering Team
+    email: api-support@stayease.example.com
+
+servers:
+  - url: http://localhost:4200/api
+    description: Angular Local Dev Environment (Mock/Proxy)
+  - url: http://localhost:3000/api
+    description: Standalone Node/Express Backend Server
+
+tags:
+  - name: Hotels
+    description: Hotel search, filtering, and property details
+  - name: Destinations
+    description: Featured and trending travel destinations
+  - name: Auth
+    description: User authentication, registration, and session tokens
+  - name: Bookings
+    description: Hotel room reservations and itinerary tracking
+
+paths:
+  # ==========================================================
+  # HOTELS ENDPOINTS
+  # ==========================================================
+  /hotels:
+    get:
+      tags:
+        - Hotels
+      summary: Search and filter hotels
+      description: Returns matching hotel properties based on location, dates, guest counts, and amenities.
+      parameters:
+        - name: location
+          in: query
+          required: false
+          description: City, destination, or country name (e.g. Goa, Paris, Bali)
+          schema:
+            type: string
+            example: Goa
+        - name: checkIn
+          in: query
+          required: false
+          description: Check-in date in YYYY-MM-DD format
+          schema:
+            type: string
+            format: date
+            example: '2026-10-15'
+        - name: checkOut
+          in: query
+          required: false
+          description: Check-out date in YYYY-MM-DD format
+          schema:
+            type: string
+            format: date
+            example: '2026-10-20'
+        - name: guests
+          in: query
+          required: false
+          description: Total number of traveling guests
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+            maximum: 16
+            example: 2
+        - name: category
+          in: query
+          required: false
+          description: Property category filter (all, beachfront, luxury, villas, cabins, etc.)
+          schema:
+            type: string
+            default: all
+            example: beachfront
+        - name: minPrice
+          in: query
+          required: false
+          description: Minimum price per night in USD
+          schema:
+            type: number
+            example: 100
+        - name: maxPrice
+          in: query
+          required: false
+          description: Maximum price per night in USD
+          schema:
+            type: number
+            example: 800
+        - name: sortBy
+          in: query
+          required: false
+          description: Sorting criteria
+          schema:
+            type: string
+            enum: [recommended, price-asc, price-desc, rating-desc]
+            default: recommended
+        - name: _ts
+          in: query
+          required: false
+          description: Cache-busting timestamp parameter
+          schema:
+            type: string
+            example: '1728638100000'
+      responses:
+        '200':
+          description: Successfully retrieved list of hotels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Hotel'
+        '400':
+          description: Invalid search criteria parameters
+        '500':
+          description: Internal server error
+
+  /hotels/{id}:
+    get:
+      tags:
+        - Hotels
+      summary: Get hotel details by ID
+      description: Returns full details, amenities, and host specs for a single hotel property.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique numeric identifier of the hotel
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Hotel details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hotel'
+        '404':
+          description: Hotel with specified ID not found
+
+  # ==========================================================
+  # DESTINATIONS ENDPOINTS
+  # ==========================================================
+  /destinations:
+    get:
+      tags:
+        - Destinations
+      summary: Retrieve popular travel destinations
+      description: Returns curated list of popular travel destinations with properties count and pricing overview.
+      responses:
+        '200':
+          description: Destination list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Destination'
+
+  # ==========================================================
+  # AUTHENTICATION ENDPOINTS
+  # ==========================================================
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Authenticate user credentials
+      description: Authenticates user email/password and returns JWT bearer session token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid email or password credentials
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register new user account
+      description: Creates a new user profile on the StayEase platform.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          description: Account with this email already exists
+
+  # ==========================================================
+  # BOOKINGS ENDPOINTS
+  # ==========================================================
+  /bookings:
+    get:
+      tags:
+        - Bookings
+      summary: List current user's reservations
+      description: Returns all past, confirmed, and upcoming bookings for the authenticated user.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User bookings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+        '401':
+          description: Unauthorized - missing or expired Bearer token
+
+    post:
+      tags:
+        - Bookings
+      summary: Create new hotel reservation
+      description: Confirms and locks in a booking for specified dates and guest counts.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Booking confirmed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid reservation dates or guest count
+        '401':
+          description: Unauthorized
+
+  /bookings/{id}:
+    delete:
+      tags:
+        - Bookings
+      summary: Cancel reservation
+      description: Cancels an upcoming booking by ID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique ID of the booking to cancel
+          schema:
+            type: string
+            example: 'BK-2026-9041'
+      responses:
+        '200':
+          description: Booking cancelled successfully
+        '404':
+          description: Booking not found
+
+# ==========================================================
+# REUSABLE COMPONENTS & SCHEMAS
+# ==========================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Standard JWT Bearer token authentication header (Authorization: Bearer <token>)
+
+  schemas:
+    Hotel:
+      type: object
+      required:
+        - id
+        - name
+        - location
+        - price
+        - rating
+        - category
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Villa Azure Coastal Retreat
+        location:
+          type: string
+          example: Santorini, Greece
+        country:
+          type: string
+          example: Greece
+        coordinates:
+          type: object
+          properties:
+            lat:
+              type: number
+              example: 36.3932
+            lng:
+              type: number
+              example: 25.4615
+        price:
+          type: number
+          example: 450
+        originalPrice:
+          type: number
+          example: 520
+        rating:
+          type: number
+          example: 4.96
+        reviewsCount:
+          type: integer
+          example: 128
+        images:
+          type: array
+          items:
+            type: string
+          example:
+            - https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff
+        category:
+          type: string
+          example: beachfront
+        amenities:
+          type: array
+          items:
+            type: string
+          example: ['Wifi', 'Pool', 'Ocean View', 'Air conditioning']
+        isFeatured:
+          type: boolean
+          example: true
+        isFavorite:
+          type: boolean
+          example: false
+        maxGuests:
+          type: integer
+          example: 4
+        bedrooms:
+          type: integer
+          example: 2
+        beds:
+          type: integer
+          example: 3
+        bathrooms:
+          type: integer
+          example: 2
+
+    Destination:
+      type: object
+      required:
+        - id
+        - name
+        - country
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Bali
+        country:
+          type: string
+          example: Indonesia
+        image:
+          type: string
+          example: https://images.unsplash.com/photo-1537996194471-e657df975ab4
+        hotelCount:
+          type: integer
+          example: 245
+        averagePrice:
+          type: number
+          example: 180
+
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          example: 'usr_8829'
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          example: john.doe@example.com
+        role:
+          type: string
+          enum: [guest, host, admin]
+          example: guest
+        avatar:
+          type: string
+          example: https://images.unsplash.com/photo-1535713875002-d1d0cf377fde
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: guest@stayease.com
+        password:
+          type: string
+          format: password
+          example: DemoPass123!
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: Alex River
+        email:
+          type: string
+          format: email
+          example: alex.river@example.com
+        password:
+          type: string
+          format: password
+          example: SecureSecret123!
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+        user:
+          $ref: '#/components/schemas/User'
+
+    CreateBookingRequest:
+      type: object
+      required:
+        - hotelId
+        - checkIn
+        - checkOut
+        - guests
+      properties:
+        hotelId:
+          type: integer
+          example: 1
+        checkIn:
+          type: string
+          format: date
+          example: '2026-10-15'
+        checkOut:
+          type: string
+          format: date
+          example: '2026-10-20'
+        guests:
+          type: integer
+          example: 2
+
+    Booking:
+      type: object
+      required:
+        - id
+        - hotelId
+        - hotelName
+        - checkIn
+        - checkOut
+        - totalPrice
+        - status
+      properties:
+        id:
+          type: string
+          example: 'BK-2026-9041'
+        hotelId:
+          type: integer
+          example: 1
+        hotelName:
+          type: string
+          example: Villa Azure Coastal Retreat
+        hotelImage:
+          type: string
+          example: https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff
+        hotelLocation:
+          type: string
+          example: Santorini, Greece
+        checkIn:
+          type: string
+          format: date
+          example: '2026-10-15'
+        checkOut:
+          type: string
+          format: date
+          example: '2026-10-20'
+        guests:
+          type: integer
+          example: 2
+        totalNights:
+          type: integer
+          example: 5
+        pricePerNight:
+          type: number
+          example: 450
+        serviceFee:
+          type: number
+          example: 65
+        taxes:
+          type: number
+          example: 85
+        totalPrice:
+          type: number
+          example: 2400
+        status:
+          type: string
+          enum: [confirmed, pending, cancelled, completed]
+          example: confirmed
+        bookingDate:
+          type: string
+          format: date-time
+          example: '2026-10-11T04:20:00Z'
