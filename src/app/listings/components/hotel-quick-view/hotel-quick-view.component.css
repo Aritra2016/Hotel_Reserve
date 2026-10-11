@@ -322,27 +322,35 @@
   color: #008a05;
 }
 
-.breakdown-table {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: var(--spacing-sm) 0;
+.quick-view-fee-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
   border-top: 1px solid var(--color-gray-light);
   border-bottom: 1px solid var(--color-gray-light);
+  margin: var(--spacing-sm) 0;
 }
 
-.breakdown-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--font-size-xs);
+.quick-view-fee-table th {
+  background: var(--color-bg);
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
   color: var(--color-gray-dark);
 }
 
-.breakdown-row--total {
+.quick-view-fee-table td {
+  padding: 6px 8px;
+  color: var(--color-gray-dark);
+}
+
+.quick-view-fee-table tr.quick-total-row td {
   font-size: var(--font-size-sm);
   font-weight: 800;
   color: var(--color-dark);
-  padding-top: 4px;
+  border-top: 1px solid var(--color-gray-light);
+  padding-top: 8px;
 }
 
 .reserve-cta-btn {

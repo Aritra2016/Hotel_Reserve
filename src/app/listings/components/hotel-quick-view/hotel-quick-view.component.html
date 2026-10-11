@@ -1,7 +1,7 @@
-<div class="modal-backdrop" *ngIf="hotel" (click)="onClose()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
+<div class="modal-backdrop" *ngIf="hotel" (click)="onClose()" data-action="onClose()">
+  <div class="modal-card" (click)="onDialogClick($event)" data-action="onDialogClick($event)">
     <!-- Close Button -->
-    <button type="button" class="modal-close" (click)="onClose()" aria-label="Close dialog">
+    <button type="button" class="modal-close" (click)="onClose()" data-action="onClose()" aria-label="Close dialog">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -18,6 +18,7 @@
             class="modal-fav-btn"
             [class.modal-fav-btn--active]="isFavorite"
             (click)="toggleFavorite($event)"
+            data-action="toggleFavorite($event)"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" [attr.fill]="isFavorite ? 'var(--color-primary)' : 'rgba(0,0,0,0.4)'" stroke="white" stroke-width="1.8">
               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -34,6 +35,7 @@
             class="thumbnail-img"
             [class.thumbnail-img--active]="idx === activePhotoIndex"
             (click)="selectPhoto(idx)"
+            data-action="selectPhoto(idx)"
             appImgFallback
           />
         </div>
@@ -117,26 +119,34 @@
             </span>
           </div>
 
-          <div class="breakdown-table">
-            <div class="breakdown-row">
-              <span>${{ hotel.price }} × {{ nights }} {{ nights === 1 ? 'night' : 'nights' }}</span>
-              <span>${{ stayTotal }}</span>
-            </div>
-            <div class="breakdown-row" *ngIf="hotel.cleaningFee">
-              <span>Cleaning fee</span>
-              <span>${{ hotel.cleaningFee }}</span>
-            </div>
-            <div class="breakdown-row" *ngIf="hotel.serviceFee">
-              <span>StayEase service fee</span>
-              <span>${{ hotel.serviceFee }}</span>
-            </div>
-            <div class="breakdown-row breakdown-row--total">
-              <span>Total before taxes</span>
-              <span>${{ grandTotal }}</span>
-            </div>
-          </div>
+          <table class="quick-view-fee-table" aria-label="Stay Fee Breakdown">
+            <thead>
+              <tr>
+                <th>Stay Fee Component</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${{ hotel.price }} × {{ nights }} {{ nights === 1 ? 'night' : 'nights' }}</td>
+                <td>${{ stayTotal }}</td>
+              </tr>
+              <tr *ngIf="hotel.cleaningFee">
+                <td>Cleaning fee</td>
+                <td>${{ hotel.cleaningFee }}</td>
+              </tr>
+              <tr *ngIf="hotel.serviceFee">
+                <td>StayEase service fee</td>
+                <td>${{ hotel.serviceFee }}</td>
+              </tr>
+              <tr class="quick-total-row">
+                <td><strong>Total before taxes</strong></td>
+                <td><strong>${{ grandTotal }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
 
-          <button type="button" class="reserve-cta-btn" (click)="onReserve()">
+          <button type="button" class="reserve-cta-btn" (click)="onReserve()" data-action="onReserve()">
             Reserve Stay
           </button>
         </div>

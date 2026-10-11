@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, AfterViewInit, OnDestroy, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, FormControl, FormArray } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -11,7 +11,7 @@ import { HotelService } from '../../../core/services/hotel.service';
   templateUrl: './hotel-filters.component.html',
   styleUrls: ['./hotel-filters.component.css'],
 })
-export class HotelFiltersComponent implements OnInit, OnChanges, OnDestroy {
+export class HotelFiltersComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   // Concept: Component Input properties
   @Input() filters: FilterCriteria = {};
   @Input() minBound = 100;
@@ -51,165 +51,276 @@ export class HotelFiltersComponent implements OnInit, OnChanges, OnDestroy {
     12, 28, 45, 78, 92, 110, 85, 65, 52, 40, 32, 24, 18, 14, 8, 5
   ];
 
-  // Concept: Subject for unsubscribing from observables on destroy
+  // Data Structure: Set storing selected amenities for O(1) membership operations
+  selectedAmenitiesSet = new Set<string>();
+
+  // RxJS Subject for unsubscribing from observables on destroy
   private destroy$ = new Subject<void>();
 
-  // Concept: Constructor injecting HotelService and FormBuilder
+  // Method: Calculate total property volume represented by histogram using Array.reduce()
+  get totalHistogramCount(): number {
+    // Array.reduce() aggregating density values across all histogram buckets
+    return this.histogramBars.reduce((sum, val) => sum + val, 0);
+  }
+
+  // Concept: Constructor injecting HotelService, FormBuilder, and ChangeDetectorRef
   constructor(
     private hotelService: HotelService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {}
 
   // LifeCycle Hook: ngOnInit runs on component initialization
   ngOnInit(): void {
-    // Concept: Initialize categories and amenities lists
+    // Initialize categories list from service
     this.categories = this.hotelService.categories;
+
+    // Initialize amenities master list from service
     this.amenitiesList = this.hotelService.availableAmenities;
 
-    // Concept: Build reactive FormGroup with FormControls and FormArray
+    // Build reactive FormGroup with FormControls and FormArray
     this.buildFilterForm();
 
-    // Concept: Synchronize local state with inputs
+    // Synchronize local state with inputs
     this.syncLocalState();
 
-    // Concept: Debugging log for filter component initialization
+    // Debugging log for filter component initialization
     console.debug('[HotelFiltersComponent] Initialized with amenities count:', this.amenitiesList.length);
   }
 
-  // LifeCycle Hook: ngOnChanges detects changes to @Input properties
+  // LifeCycle Hook: ngOnChanges detects changes to @Input properties from parent ListingsComponent
   ngOnChanges(changes: SimpleChanges): void {
-    // Concept: Optional chaining (?.) and property change detection
-    if (changes?.['filters'] || changes?.['minBound'] || changes?.['maxBound']) {
+    // Check if any bound input property changed
+    if (changes?.['filters'] || changes?.['minBound'] || changes?.['maxBound'] || changes?.['isOpen']) {
+      // Synchronize local filter variables
       this.syncLocalState();
+
+      // Trigger change detection cycle
+      this.cdr.markForCheck();
     }
+  }
+
+  // LifeCycle Hook: ngAfterViewInit runs after filter view components are initialized
+  ngAfterViewInit(): void {
+    // Log view attachment
+    console.debug('[HotelFiltersComponent] Filters view initialized');
   }
 
   // Method: Initialize reactive FormGroup and dynamic FormArray
   private buildFilterForm(): void {
+    // Create FormGroup with bound initial bounds
     this.filterForm = this.fb.group({
       minPriceCtrl: new FormControl(this.minBound),
       maxPriceCtrl: new FormControl(this.maxBound),
       categoryCtrl: new FormControl('all'),
-      // Concept: FormArray holding dynamic amenity controls
+      // FormArray holding dynamic amenity controls
       amenitiesArray: this.fb.array(
         this.amenitiesList.map(() => new FormControl(false))
       ),
     });
   }
 
-  // Concept: FormArray getter
+  // FormArray getter
   get amenitiesFormArray(): FormArray {
+    // Cast control to FormArray
     return this.filterForm.get('amenitiesArray') as FormArray;
   }
 
   // Method: Synchronize local filter state variables from @Input filters model
   private syncLocalState(): void {
+    // Read min price or fallback to minimum bound
     this.localMinPrice = this.filters?.minPrice ?? this.minBound;
+
+    // Read max price or fallback to maximum bound
     this.localMaxPrice = this.filters?.maxPrice ?? this.maxBound;
+
+    // Read category or default to 'all'
     this.selectedCategory = this.filters?.category || 'all';
+
+    // Read minimum rating threshold
     this.selectedRating = this.filters?.minRating ?? null;
-    // Concept: Array.isArray verification and shallow copy
+
+    // Array.isArray verification and shallow copy
     this.selectedAmenities = Array.isArray(this.filters?.amenities) ? [...this.filters.amenities] : [];
+
+    // Clear previous Set entries
+    this.selectedAmenitiesSet.clear();
+
+    // Populate Set with active amenities
+    this.selectedAmenities.forEach(a => this.selectedAmenitiesSet.add(a));
+
+    // Read superhost flag
     this.superhostOnly = !!this.filters?.superhostOnly;
+
+    // Read free cancellation flag
     this.freeCancellationOnly = !!this.filters?.freeCancellationOnly;
+
+    // Read instant book flag
     this.instantBookOnly = !!this.filters?.instantBookOnly;
   }
 
   // Method: Calculate count of currently active filter items
   get activeFiltersCount(): number {
+    // Initialize counter
     let count = 0;
+
+    // Increment if specific category is selected
     if (this.selectedCategory && this.selectedCategory !== 'all') count++;
+
+    // Increment if price bounds deviate from baseline
     if (this.localMinPrice > this.minBound || this.localMaxPrice < this.maxBound) count++;
+
+    // Increment if rating filter is active
     if (this.selectedRating) count++;
-    // Concept: Array.isArray check on selectedAmenities
-    if (Array.isArray(this.selectedAmenities) && this.selectedAmenities.length > 0) {
-      count += this.selectedAmenities.length;
+
+    // Increment for each selected amenity
+    if (this.selectedAmenitiesSet.size > 0) {
+      count += this.selectedAmenitiesSet.size;
     }
+
+    // Increment for superhost perk
     if (this.superhostOnly) count++;
+
+    // Increment for cancellation perk
     if (this.freeCancellationOnly) count++;
+
+    // Increment for instant book perk
     if (this.instantBookOnly) count++;
+
+    // Return total count
     return count;
   }
 
   // Method: Update category selection and apply filters
   onCategorySelect(cat: string): void {
+    // Update local category variable
     this.selectedCategory = cat;
+
+    // Trigger filter update
     this.applyFilters();
   }
 
   // Method: Update rating threshold and apply filters
   onRatingSelect(rating: number | null): void {
+    // Update rating state
     this.selectedRating = rating;
+
+    // Trigger filter update
     this.applyFilters();
   }
 
-  // Method: Toggle an amenity in the selected list
+  // Method: Toggle an amenity using Set.has(), Set.delete(), and Set.add()
   toggleAmenity(amenity: string): void {
-    const idx = this.selectedAmenities.indexOf(amenity);
-    if (idx >= 0) {
-      // Concept: Array.splice() to remove item
-      this.selectedAmenities.splice(idx, 1);
+    // Check if amenity exists in Set
+    if (this.selectedAmenitiesSet.has(amenity)) {
+      // Remove amenity from Set
+      this.selectedAmenitiesSet.delete(amenity);
     } else {
-      // Concept: Array.push() to add item
-      this.selectedAmenities.push(amenity);
+      // Add amenity into Set
+      this.selectedAmenitiesSet.add(amenity);
     }
+
+    // Convert Set back to array representation using Array.from()
+    this.selectedAmenities = Array.from(this.selectedAmenitiesSet);
+
+    // Trigger filter dispatch
     this.applyFilters();
   }
 
-  // Method: Determine if an amenity is currently selected
+  // Method: Determine if an amenity is currently selected using Set.has()
   isAmenitySelected(amenity: string): boolean {
-    return this.selectedAmenities.includes(amenity);
+    // Return O(1) Set membership check
+    return this.selectedAmenitiesSet.has(amenity);
   }
 
   // Method: Handle price changes and auto-correct min/max bounds
   onPriceChange(): void {
+    // Check if min exceeds max
     if (this.localMinPrice > this.localMaxPrice) {
+      // Auto-correct min bound
       this.localMinPrice = this.localMaxPrice;
     }
+    // Trigger filter dispatch
     this.applyFilters();
   }
 
   // Method: Toggle boolean perks (Superhost, Free Cancellation, Instant Book)
   togglePerk(perk: 'superhost' | 'cancellation' | 'instant'): void {
+    // Branch by perk type
     if (perk === 'superhost') this.superhostOnly = !this.superhostOnly;
     if (perk === 'cancellation') this.freeCancellationOnly = !this.freeCancellationOnly;
     if (perk === 'instant') this.instantBookOnly = !this.instantBookOnly;
+
+    // Trigger filter dispatch
     this.applyFilters();
   }
 
   // Method: Reset all filters to their baseline defaults
   resetAll(): void {
+    // Reset min price
     this.localMinPrice = this.minBound;
+
+    // Reset max price
     this.localMaxPrice = this.maxBound;
+
+    // Reset category
     this.selectedCategory = 'all';
+
+    // Reset rating
     this.selectedRating = null;
+
+    // Clear selected amenities array
     this.selectedAmenities = [];
+
+    // Clear selected amenities Set
+    this.selectedAmenitiesSet.clear();
+
+    // Reset superhost perk
     this.superhostOnly = false;
+
+    // Reset cancellation perk
     this.freeCancellationOnly = false;
+
+    // Reset instant book perk
     this.instantBookOnly = false;
+
+    // Trigger filter dispatch
     this.applyFilters();
   }
 
-  // Method: Emit updated FilterCriteria to parent component
+  private filterDebounceTimer: any = null;
+
+  // Method: Emit updated FilterCriteria to parent component with setTimeout asynchronous debounce and if-else
   applyFilters(): void {
-    const updated: FilterCriteria = {
-      ...this.filters,
-      category: this.selectedCategory,
-      minPrice: this.localMinPrice > this.minBound ? this.localMinPrice : null,
-      maxPrice: this.localMaxPrice < this.maxBound ? this.localMaxPrice : null,
-      minRating: this.selectedRating,
-      amenities: [...this.selectedAmenities],
-      superhostOnly: this.superhostOnly,
-      freeCancellationOnly: this.freeCancellationOnly,
-      instantBookOnly: this.instantBookOnly,
-      page: 1,
-    };
+    if (this.filterDebounceTimer) {
+      clearTimeout(this.filterDebounceTimer);
+    }
 
-    // Concept: Array.forEach() logging active filter values
-    this.selectedAmenities.forEach(a => console.debug('[FilterApplied] Amenity:', a));
+    // Concept: setTimeout function in component.ts for asynchronous calling simulation
+    this.filterDebounceTimer = setTimeout(() => {
+      const updated: FilterCriteria = {
+        ...this.filters,
+        category: this.selectedCategory,
+        minPrice: this.localMinPrice > this.minBound ? this.localMinPrice : null,
+        maxPrice: this.localMaxPrice < this.maxBound ? this.localMaxPrice : null,
+        minRating: this.selectedRating,
+        amenities: [...this.selectedAmenities],
+        superhostOnly: this.superhostOnly,
+        freeCancellationOnly: this.freeCancellationOnly,
+        instantBookOnly: this.instantBookOnly,
+        page: 1,
+      };
 
-    // Concept: EventEmitter emit() call
-    this.filtersChange.emit(updated);
+      // Concept: if - else condition checking active amenities
+      if (Array.isArray(this.selectedAmenities) && this.selectedAmenities.length > 0) {
+        console.debug('[HotelFiltersComponent] Applying filters with amenities:', this.selectedAmenities.length);
+      } else {
+        console.debug('[HotelFiltersComponent] Applying filters with no specific amenities');
+      }
+
+      // Concept: EventEmitter emit() call
+      this.filtersChange.emit(updated);
+    }, 150);
   }
 
   // Method: Close sliding drawer on mobile
@@ -219,6 +330,9 @@ export class HotelFiltersComponent implements OnInit, OnChanges, OnDestroy {
 
   // LifeCycle Hook: ngOnDestroy cleanup
   ngOnDestroy(): void {
+    if (this.filterDebounceTimer) {
+      clearTimeout(this.filterDebounceTimer);
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }

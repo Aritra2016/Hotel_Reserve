@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, BehaviorSubject } from 'rxjs';
 import { map, shareReplay, tap, catchError } from 'rxjs/operators';
 import {
@@ -65,7 +65,7 @@ export class HotelService {
   ];
 
   // Concept: Constructor injecting Angular's HttpClient for real network requests
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // Method: Load favorites list from browser localStorage with try/catch error handling
   private loadFavoritesFromStorage(): number[] {
@@ -183,10 +183,58 @@ export class HotelService {
     };
   }
 
-  // Method: Search and filter pipeline applying criteria, Array.filter(), Array.map(), sorting and pagination
+  // Method: Search and filter pipeline applying criteria, live HTTP request with HttpParams, sorting and pagination
   searchHotels(criteria: FilterCriteria): Observable<PaginatedResult<Hotel>> {
-    // Concept: Pipe from live HTTP stream getAllHotels()
-    return this.getAllHotels().pipe(
+    // Construct dynamic HttpParams representing current search filter query
+    let httpParams = new HttpParams().set('_ts', Date.now().toString());
+
+    // Check if location filter criteria was provided
+    if (criteria?.location && criteria.location.trim().length > 0) {
+      // Append sanitized location parameter to query string
+      httpParams = httpParams.set('location', criteria.location.trim());
+    }
+
+    // Check if checkIn date was provided
+    if (criteria?.checkIn) {
+      // Append checkIn parameter to query string
+      httpParams = httpParams.set('checkIn', criteria.checkIn);
+    }
+
+    // Check if checkOut date was provided
+    if (criteria?.checkOut) {
+      // Append checkOut parameter to query string
+      httpParams = httpParams.set('checkOut', criteria.checkOut);
+    }
+
+    // Check if guests count was provided
+    if (criteria?.guests) {
+      // Append guests count parameter to query string
+      httpParams = httpParams.set('guests', criteria.guests.toString());
+    }
+
+    // Check if category was specified
+    if (criteria?.category && criteria.category !== 'all') {
+      // Append category parameter to query string
+      httpParams = httpParams.set('category', criteria.category);
+    }
+
+    // Execute live HTTP GET request via HttpClient (visible in DevTools Network tab!)
+    return this.http.get<Hotel[]>(this.HOTELS_API_URL, { params: httpParams }).pipe(
+      // Log outgoing HTTP search request in console
+      tap((hotels: Hotel[]) =>
+        console.debug(
+          `[HotelService:HTTP] Search request dispatched over network (${hotels.length} hotels returned):`,
+          criteria
+        )
+      ),
+      // Intercept network failure errors
+      catchError((err: unknown) => {
+        // Log network error
+        console.error('[HotelService:HTTP] Error executing live search request:', err);
+        // Fallback to empty array
+        return of([] as Hotel[]);
+      }),
+      // Process, filter, sort, and paginate matching hotels
       map(allHotels => {
         let list: Hotel[] = [...allHotels];
 

@@ -247,3 +247,30 @@
   height: 1px;
   background: var(--color-gray-light);
 }
+
+/* ===== POPUP SPECS TABLE ===== */
+.popup-specs-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 11px;
+  background: var(--color-bg);
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+}
+
+.popup-specs-table th {
+  background: var(--color-gray-200);
+  padding: 3px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+}
+
+.popup-specs-table td {
+  padding: 3px 6px;
+  font-weight: 600;
+  color: var(--color-dark);
+}
+

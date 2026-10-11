@@ -770,6 +770,63 @@
   color: var(--color-gray-500);
 }
 
+/* ===== PRICING LEDGER & SPECS TABLES ===== */
+.pricing-ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.pricing-ledger-table th {
+  background: var(--color-gray-100);
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--color-gray-600);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.pricing-ledger-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-gray-100);
+  color: var(--color-gray-700);
+}
+
+.pricing-ledger-table tr.ledger-total-row td {
+  border-top: 1.5px solid var(--color-gray-300);
+  border-bottom: none;
+  padding-top: 10px;
+}
+
+.property-specs-table-wrap {
+  margin: var(--spacing-md) 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-white);
+}
+
+.specs-data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.specs-data-table th {
+  background: var(--color-gray-100);
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--color-gray-700);
+  border-bottom: 1.5px solid var(--color-gray-200);
+}
+
+.specs-data-table td {
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  color: var(--color-gray-800);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
 .booking-guarantee {
   margin-top: var(--spacing-md);
   padding-top: var(--spacing-sm);

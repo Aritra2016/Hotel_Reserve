@@ -2,7 +2,7 @@
 <div class="search-refine-header">
   <div class="container search-refine-inner">
     <!-- Compact Search Capsule Trigger -->
-    <div class="search-capsule" (click)="toggleSearchDropdown()">
+    <div class="search-capsule" (click)="toggleSearchDropdown()" data-action="toggleSearchDropdown()">
       <div class="capsule-part">
         <span class="capsule-label">Where</span>
         <span class="capsule-value">{{ filters.location ? filters.location : 'Anywhere' }}</span>
@@ -38,6 +38,7 @@
         class="cat-chip"
         [class.cat-chip--active]="filters.category === cat.value"
         (click)="onSelectCategory(cat.value)"
+        data-action="onSelectCategory(cat.value)"
       >
         <span class="cat-chip__icon">{{ cat.icon }}</span>
         <span class="cat-chip__label">{{ cat.label }}</span>
@@ -46,41 +47,41 @@
   </div>
 
   <!-- Search Refinement Dropdown Modal -->
-  <div class="refine-dropdown" *ngIf="isSearchDropdownOpen" (click)="$event.stopPropagation()">
-    <div class="refine-form">
+  <div class="refine-dropdown" *ngIf="isSearchDropdownOpen" (click)="stopEventPropagation($event)" data-action="stopEventPropagation($event)">
+    <form [formGroup]="refineSearchForm" (ngSubmit)="onRefineSearch()" class="refine-form">
       <div class="refine-field">
         <label>Destination</label>
         <input
           type="text"
-          [(ngModel)]="searchLocation"
+          formControlName="location"
           placeholder="Where to? (e.g. Miami, Paris, Bali)"
         />
       </div>
 
       <div class="refine-field">
         <label>Check In</label>
-        <input type="date" [(ngModel)]="searchCheckIn" />
+        <input type="date" formControlName="checkIn" />
       </div>
 
       <div class="refine-field">
         <label>Check Out</label>
-        <input type="date" [(ngModel)]="searchCheckOut" />
+        <input type="date" formControlName="checkOut" />
       </div>
 
       <div class="refine-field">
         <label>Guests</label>
-        <input type="number" min="1" max="16" [(ngModel)]="searchGuests" />
+        <input type="number" min="1" max="16" formControlName="guests" />
       </div>
 
       <div class="refine-actions">
-        <button type="button" class="btn-cancel" (click)="isSearchDropdownOpen = false">
+        <button type="button" class="btn-cancel" data-action="closeSearchDropdown()" (click)="closeSearchDropdown()">
           Cancel
         </button>
-        <button type="button" class="btn-submit" (click)="onRefineSearch()">
+        <button type="submit" class="btn-submit" data-action="onRefineSearch()">
           Update Search
         </button>
       </div>
-    </div>
+    </form>
   </div>
 </div>
 
@@ -97,46 +98,68 @@
         <p class="results-subtext" *ngIf="filters.checkIn && filters.checkOut">
           {{ filters.checkIn }} to {{ filters.checkOut }} · {{ calculatedNights }} {{ calculatedNights === 1 ? 'night' : 'nights' }} · {{ filters.guests || 1 }} {{ (filters.guests || 1) === 1 ? 'guest' : 'guests' }}
         </p>
+
+        <!-- Market Overview Index Table -->
+        <div class="market-index-table-wrap">
+          <table class="market-index-table" aria-label="Market Price Index">
+            <thead>
+              <tr>
+                <th>Destination Market</th>
+                <th>Avg Nightly Rate</th>
+                <th>Available Stays</th>
+                <th>Inventory Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{{ filters.location || 'Global Catalog' }}</td>
+                <td>${{ averagePricePerNight | number:'1.0-0' }} / night</td>
+                <td>{{ result ? result.totalCount : 0 }} Properties</td>
+                <td>Instant Book & Superhosts</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Active Filters Quick Removable Chips -->
       <div class="active-chips-row" *ngIf="activeFilterCount > 0">
         <span class="active-chip" *ngIf="filters.category && filters.category !== 'all'">
           Category: {{ filters.category }}
-          <button (click)="removeFilter('category')">×</button>
+          <button (click)="removeFilter('category')" data-action="removeFilter('category')">×</button>
         </span>
 
         <span class="active-chip" *ngIf="filters.minPrice || filters.maxPrice">
           Price: ${{ filters.minPrice || minPriceBound }} - ${{ filters.maxPrice || maxPriceBound }}
-          <button (click)="removeFilter('price')">×</button>
+          <button (click)="removeFilter('price')" data-action="removeFilter('price')">×</button>
         </span>
 
         <span class="active-chip" *ngIf="filters.minRating">
           Rating: {{ filters.minRating }}★+
-          <button (click)="removeFilter('rating')">×</button>
+          <button (click)="removeFilter('rating')" data-action="removeFilter('rating')">×</button>
         </span>
 
         <span class="active-chip" *ngFor="let am of filters.amenities">
           {{ am }}
-          <button (click)="removeFilter('amenity', am)">×</button>
+          <button (click)="removeFilter('amenity', am)" data-action="removeFilter('amenity', am)">×</button>
         </span>
 
         <span class="active-chip" *ngIf="filters.superhostOnly">
           ⭐ Superhost
-          <button (click)="removeFilter('superhost')">×</button>
+          <button (click)="removeFilter('superhost')" data-action="removeFilter('superhost')">×</button>
         </span>
 
         <span class="active-chip" *ngIf="filters.freeCancellationOnly">
           Free Cancellation
-          <button (click)="removeFilter('cancellation')">×</button>
+          <button (click)="removeFilter('cancellation')" data-action="removeFilter('cancellation')">×</button>
         </span>
 
         <span class="active-chip" *ngIf="filters.instantBookOnly">
           Instant Book
-          <button (click)="removeFilter('instant')">×</button>
+          <button (click)="removeFilter('instant')" data-action="removeFilter('instant')">×</button>
         </span>
 
-        <button class="clear-all-chips" (click)="resetAllFilters()">
+        <button class="clear-all-chips" (click)="resetAllFilters()" data-action="resetAllFilters()">
           Clear all
         </button>
       </div>
@@ -149,6 +172,7 @@
         type="button"
         class="filter-drawer-toggle"
         (click)="toggleFilterDrawer()"
+        data-action="toggleFilterDrawer()"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="4" y1="21" x2="4" y2="14"></line>
@@ -188,6 +212,7 @@
           class="view-btn"
           [class.view-btn--active]="viewMode === 'grid'"
           (click)="setViewMode('grid')"
+          data-action="setViewMode('grid')"
           title="Grid View"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -203,6 +228,7 @@
           class="view-btn"
           [class.view-btn--active]="viewMode === 'list'"
           (click)="setViewMode('list')"
+          data-action="setViewMode('list')"
           title="List View"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -220,6 +246,7 @@
           class="view-btn"
           [class.view-btn--active]="viewMode === 'map'"
           (click)="setViewMode('map')"
+          data-action="setViewMode('map')"
           title="Split Map View"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -271,7 +298,7 @@
       <div class="empty-icon">🏝️</div>
       <h3>No stays found matching your criteria</h3>
       <p>Try clearing some filters or searching for another destination to explore available hotels.</p>
-      <button type="button" class="btn-primary" (click)="resetAllFilters()">
+      <button type="button" class="btn-primary" (click)="resetAllFilters()" data-action="resetAllFilters()">
         Reset all filters
       </button>
     </div>
@@ -303,6 +330,7 @@
         class="page-nav-btn"
         [disabled]="result.page <= 1"
         (click)="goToPage(result.page - 1)"
+        data-action="goToPage(result.page - 1)"
       >
         ← Previous
       </button>
@@ -314,6 +342,7 @@
           class="page-num-btn"
           [class.page-num-btn--active]="result.page === (i + 1)"
           (click)="goToPage(i + 1)"
+          data-action="goToPage(i + 1)"
         >
           {{ i + 1 }}
         </button>
@@ -324,6 +353,7 @@
         class="page-nav-btn"
         [disabled]="result.page >= result.totalPages"
         (click)="goToPage(result.page + 1)"
+        data-action="goToPage(result.page + 1)"
       >
         Next →
       </button>
@@ -349,7 +379,7 @@
   [maxBound]="maxPriceBound"
   [isOpen]="isFilterDrawerOpen"
   (filtersChange)="onFiltersChanged($event)"
-  (closeDrawer)="isFilterDrawerOpen = false"
+  (closeDrawer)="closeFilterDrawer()"
 ></app-hotel-filters>
 
 <!-- ===== QUICK VIEW MODAL COMPONENT ===== -->

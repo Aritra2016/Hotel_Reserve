@@ -428,3 +428,33 @@
     font-size: 11px;
   }
 }
+
+/* ===== COMPACT SPECS TABLE ===== */
+.card-specs-table-wrap {
+  margin: 6px 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-gray-200);
+}
+
+.card-specs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.card-specs-table th {
+  background: var(--color-gray-100);
+  padding: 3px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  text-transform: uppercase;
+}
+
+.card-specs-table td {
+  padding: 3px 6px;
+  color: var(--color-dark);
+  font-weight: 500;
+}
+

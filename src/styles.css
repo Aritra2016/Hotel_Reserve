@@ -187,3 +187,25 @@ ul {
   border-color: var(--color-gray-700);
   box-shadow: var(--shadow-sm);
 }
+
+/* ===== Base Table Styles ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  text-align: left;
+}
+
+th {
+  font-weight: 600;
+  color: var(--color-gray-700);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+td {
+  padding: 8px 12px;
+  color: var(--color-dark);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+

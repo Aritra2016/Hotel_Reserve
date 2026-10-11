@@ -1,5 +1,5 @@
 <div class="filters-container" [class.filters-container--open]="isOpen">
-  <div class="filters-backdrop" (click)="onClose()"></div>
+  <div class="filters-backdrop" (click)="onClose()" data-action="onClose()"></div>
 
   <aside class="filters-panel">
     <!-- Header -->
@@ -12,20 +12,10 @@
       </div>
 
       <div class="filters-header__right">
-        <button
-          type="button"
-          class="reset-btn"
-          *ngIf="activeFiltersCount > 0"
-          (click)="resetAll()"
-        >
+        <button type="button" class="reset-btn" *ngIf="activeFiltersCount > 0" (click)="resetAll()" data-action="resetAll()">
           Clear all
         </button>
-        <button
-          type="button"
-          class="close-drawer-btn"
-          (click)="onClose()"
-          aria-label="Close filters"
-        >
+        <button type="button" class="close-drawer-btn" (click)="onClose()" data-action="onClose()" aria-label="Close filters">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -43,15 +33,11 @@
 
         <!-- Price Distribution Histogram -->
         <div class="histogram-bars">
-          <div
-            *ngFor="let h of histogramBars; let i = index"
-            class="histogram-bar"
-            [style.height.px]="h * 0.45"
+          <div *ngFor="let h of histogramBars; let i = index" class="histogram-bar" [style.height.px]="h * 0.45"
             [class.histogram-bar--in-range]="
               (minBound + (i / histogramBars.length) * (maxBound - minBound)) >= localMinPrice &&
               (minBound + (i / histogramBars.length) * (maxBound - minBound)) <= localMaxPrice
-            "
-          ></div>
+            "></div>
         </div>
 
         <!-- Slider and Input Fields -->
@@ -60,13 +46,8 @@
             <label>Minimum</label>
             <div class="price-input-wrapper">
               <span class="currency">$</span>
-              <input
-                type="number"
-                [(ngModel)]="localMinPrice"
-                [min]="minBound"
-                [max]="localMaxPrice"
-                (change)="onPriceChange()"
-              />
+              <input type="number" [(ngModel)]="localMinPrice" [min]="minBound" [max]="localMaxPrice"
+                (change)="onPriceChange()" data-action="onPriceChange()" />
             </div>
           </div>
 
@@ -76,38 +57,23 @@
             <label>Maximum</label>
             <div class="price-input-wrapper">
               <span class="currency">$</span>
-              <input
-                type="number"
-                [(ngModel)]="localMaxPrice"
-                [min]="localMinPrice"
-                [max]="maxBound"
-                (change)="onPriceChange()"
-              />
+              <input type="number" [(ngModel)]="localMaxPrice" [min]="localMinPrice" [max]="maxBound"
+                (change)="onPriceChange()" data-action="onPriceChange()" />
             </div>
           </div>
         </div>
 
-        <input
-          type="range"
-          class="price-slider"
-          [min]="minBound"
-          [max]="maxBound"
-          [(ngModel)]="localMaxPrice"
-          (input)="onPriceChange()"
-        />
+        <input type="range" class="price-slider" [min]="minBound" [max]="maxBound" [(ngModel)]="localMaxPrice"
+          (input)="onPriceChange()" data-action="onPriceChange()" />
       </section>
 
       <!-- Rating Section -->
       <section class="filter-group">
         <h4 class="group-title">Guest Rating</h4>
         <div class="rating-pills">
-          <button
-            type="button"
-            *ngFor="let opt of ratingOptions"
-            class="pill-btn"
-            [class.pill-btn--active]="selectedRating === opt.value"
-            (click)="onRatingSelect(opt.value)"
-          >
+          <button type="button" *ngFor="let opt of ratingOptions" class="pill-btn"
+            [class.pill-btn--active]="selectedRating === opt.value" (click)="onRatingSelect(opt.value)"
+            data-action="onRatingSelect(opt.value)">
             {{ opt.label }}
           </button>
         </div>
@@ -117,13 +83,9 @@
       <section class="filter-group">
         <h4 class="group-title">Property Category</h4>
         <div class="category-grid">
-          <button
-            type="button"
-            *ngFor="let cat of categories"
-            class="category-card-btn"
-            [class.category-card-btn--active]="selectedCategory === cat.value"
-            (click)="onCategorySelect(cat.value)"
-          >
+          <button type="button" *ngFor="let cat of categories" class="category-card-btn"
+            [class.category-card-btn--active]="selectedCategory === cat.value" (click)="onCategorySelect(cat.value)"
+            data-action="onCategorySelect(cat.value)">
             <span class="cat-icon">{{ cat.icon }}</span>
             <span class="cat-label">{{ cat.label }}</span>
           </button>
@@ -135,11 +97,7 @@
         <h4 class="group-title">Perks & Booking Type</h4>
         <div class="checkbox-list">
           <label class="custom-checkbox">
-            <input
-              type="checkbox"
-              [checked]="superhostOnly"
-              (change)="togglePerk('superhost')"
-            />
+            <input type="checkbox" [checked]="superhostOnly" (change)="togglePerk('superhost')" data-action="togglePerk('superhost')" />
             <span class="checkmark"></span>
             <div class="label-info">
               <span class="label-title">⭐ Superhost Only</span>
@@ -148,11 +106,7 @@
           </label>
 
           <label class="custom-checkbox">
-            <input
-              type="checkbox"
-              [checked]="freeCancellationOnly"
-              (change)="togglePerk('cancellation')"
-            />
+            <input type="checkbox" [checked]="freeCancellationOnly" (change)="togglePerk('cancellation')" data-action="togglePerk('cancellation')" />
             <span class="checkmark"></span>
             <div class="label-info">
               <span class="label-title">✓ Free Cancellation</span>
@@ -161,11 +115,7 @@
           </label>
 
           <label class="custom-checkbox">
-            <input
-              type="checkbox"
-              [checked]="instantBookOnly"
-              (change)="togglePerk('instant')"
-            />
+            <input type="checkbox" [checked]="instantBookOnly" (change)="togglePerk('instant')" data-action="togglePerk('instant')" />
             <span class="checkmark"></span>
             <div class="label-info">
               <span class="label-title">⚡ Instant Book</span>
@@ -179,24 +129,49 @@
       <section class="filter-group">
         <h4 class="group-title">Amenities</h4>
         <div class="amenities-grid">
-          <button
-            type="button"
-            *ngFor="let am of amenitiesList"
-            class="amenity-pill"
-            [class.amenity-pill--active]="isAmenitySelected(am)"
-            (click)="toggleAmenity(am)"
-          >
+          <button type="button" *ngFor="let am of amenitiesList" class="amenity-pill"
+            [class.amenity-pill--active]="isAmenitySelected(am)" (click)="toggleAmenity(am)"
+            data-action="toggleAmenity(am)">
             <span class="amenity-check" *ngIf="isAmenitySelected(am)">✓</span>
             <span>{{ am }}</span>
           </button>
+        </div>
+      </section>
+
+      <!-- Active Criteria Summary Table -->
+      <section class="filter-group">
+        <h4 class="group-title">Filter Summary Matrix</h4>
+        <div class="filter-table-wrap">
+          <table class="filter-summary-table" aria-label="Active Filter Parameters">
+            <thead>
+              <tr>
+                <th>Filter Criteria</th>
+                <th>Selected Setting</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Price Window</td>
+                <td>${{ localMinPrice }} – ${{ localMaxPrice }}</td>
+              </tr>
+              <tr>
+                <td>Guest Rating</td>
+                <td>{{ selectedRating ? selectedRating + '★ & up' : 'Any Rating' }}</td>
+              </tr>
+              <tr>
+                <td>Category</td>
+                <td>{{ selectedCategory || 'All Types' }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
     </div>
 
     <!-- Mobile Drawer Footer CTA -->
     <div class="filters-footer">
-      <button type="button" class="btn-clear" (click)="resetAll()">Clear all</button>
-      <button type="button" class="btn-apply" (click)="onClose()">
+      <button type="button" class="btn-clear" (click)="resetAll()" data-action="resetAll()">Clear all</button>
+      <button type="button" class="btn-apply" (click)="onClose()" data-action="onClose()">
         Show results
       </button>
     </div>

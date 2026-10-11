@@ -1,8 +1,8 @@
-import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, FormControl, FormArray, Validators } from '@angular/forms';
+import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, Observable } from 'rxjs';
-import { takeUntil, finalize, tap } from 'rxjs/operators';
+import { FormBuilder, FormGroup, FormControl } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { takeUntil, finalize } from 'rxjs/operators';
 import {
   Hotel,
   Category,
@@ -12,23 +12,16 @@ import {
 } from '../core/models/hotel.model';
 import { HotelService } from '../core/services/hotel.service';
 
-// Component: Main controller for the Listings and Search Results view
 @Component({
   selector: 'app-listings',
   templateUrl: './listings.component.html',
   styleUrls: ['./listings.component.css'],
 })
 export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
-  // Concept: FormGroup for reactive search refinement
+  // Concept: Reactive FormGroup for search refinement
   refineSearchForm!: FormGroup;
 
-  // Concept: Compact Search Refinement Form two-way binding properties
-  searchLocation: string = '';
-  searchCheckIn: string = '';
-  searchCheckOut: string = '';
-  searchGuests: number = 1;
-
-  // Concept: Filter criteria model state
+  // Query & Filter State
   filters: FilterCriteria = {
     location: '',
     checkIn: '',
@@ -47,115 +40,128 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
     pageSize: 9,
   };
 
-  // Concept: Paginated response result holding items and counters
+  // Results State
   result: PaginatedResult<Hotel> | null = null;
   hotels: Hotel[] = [];
   categories: Category[] = [];
   isLoading = true;
 
-  // Concept: View display mode ('grid' | 'list' | 'map')
+  // View Mode: 'grid' | 'list' | 'map'
   viewMode: 'grid' | 'list' | 'map' = 'grid';
 
-  // Concept: Boolean UI toggle for sliding mobile drawer
+  // Mobile / Slide-in Filter Drawer
   isFilterDrawerOpen = false;
 
-  // Concept: Selected hotel for the Quick View modal dialog
+  // Quick View Modal
   selectedHotelForQuickView: Hotel | null = null;
 
-  // Concept: Map pin hover and selection state variables
+  // Hovered and Selected Map Pins
   hoveredHotelId: number | null = null;
   selectedHotelId: number | null = null;
 
-  // Concept: Search refinement dropdown open/close state
+  // Compact Search Refinement Form state
+  searchLocation = '';
+  searchCheckIn = '';
+  searchCheckOut = '';
+  searchGuests = 1;
   isSearchDropdownOpen = false;
 
-  // Concept: Numeric min/max boundary values for price sliders
+  // Min / Max Price Bounds from dataset
+  // Min / Max Price Bounds from dataset
   minPriceBound = 50;
   maxPriceBound = 1200;
 
-  // Concept: RxJS Subject for memory-leak free unsubscription
+  // Data Structure: Map caching hotels by ID for O(1) pins, hover, and selection lookups
+  hotelMap = new Map<number, Hotel>();
+
+  // Data Structure: Map storing counts of available hotels per category
+  categoryCountMap = new Map<string, number>();
+
+  // Data Structure: Set containing distinct cities across current listings
+  uniqueLocationsSet = new Set<string>();
+
+  // Data Structure: Set containing all unique amenities found across loaded hotels
+  availableAmenitiesSet = new Set<string>();
+
+  // RxJS Subject for managing component cleanup
   private destroy$ = new Subject<void>();
 
-  // Concept: Dependency injection of Router, ActivatedRoute, FormBuilder, and HotelService
+  // Method: Calculate average price per night across matching hotels using Array.reduce()
+  get averagePricePerNight(): number {
+    // Check if hotels array is empty
+    if (!this.hotels || this.hotels.length === 0) {
+      // Return zero baseline
+      return 0;
+    }
+    // Sum prices with Array.reduce() using optional chaining
+    const totalPrice = this.hotels.reduce((acc, h) => acc + (h?.price || 0), 0);
+    // Return rounded average
+    return Math.round(totalPrice / this.hotels.length);
+  }
+
   constructor(
-    private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private hotelService: HotelService
-  ) {}
+    private hotelService: HotelService,
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
+  ) { }
 
-  // LifeCycle Hook: ngOnInit runs on component initialization
   ngOnInit(): void {
-    // Concept: Initialize reactive FormBuilder group with FormControls and FormArray
-    this.buildRefineForm();
-
-    // Concept: Retrieve categories from hotel service
+    // Load categories list from HotelService
     this.categories = this.hotelService.categories;
 
-    // Concept: Determine min/max price range from dataset
+    // Retrieve global price range
     const priceRange = this.hotelService.getPriceRange();
+
+    // Assign minimum price bound
     this.minPriceBound = priceRange.min;
+
+    // Assign maximum price bound
     this.maxPriceBound = priceRange.max;
 
-    // Concept: RxJS Observable stream listening to route query parameters
+    // Initialize reactive search refinement FormGroup
+    this.buildRefineForm();
+
+    // Listen to query param changes via ActivatedRoute
     this.route.queryParams
-      .pipe(
-        takeUntil(this.destroy$),
-        tap(params => console.debug('[ListingsComponent] Received queryParams:', params))
-      )
+      .pipe(takeUntil(this.destroy$))
+      // Subscribe to route parameter observable
       .subscribe(params => {
-        // Concept: Method call to parse and bind parameters to filters
+        // Parse incoming query parameters
         this.parseQueryParams(params);
-        // Concept: Fetch matching hotel listings
+
+        // Fetch filtered hotels from HotelService
         this.fetchListings();
       });
   }
 
-  // LifeCycle Hook: ngAfterViewInit executes after component view has been fully initialized
-  ngAfterViewInit(): void {
-    // Concept: Debugging log confirming view initialization
-    console.debug('[ListingsComponent] View initialized successfully');
-
-    // Concept: setTimeout demonstration to execute code in the next browser macrotask
-    setTimeout(() => {
-      // Concept: Optional chaining (?.) to log loaded results
-      if (this.result?.items) {
-        console.log(`[ListingsComponent] Initial listings count: ${this.result.items.length}`);
-      }
-    }, 100);
-  }
-
-  // Method: Initialize reactive FormGroup with FormControls and FormArray
+  // Method: Build reactive search refinement FormGroup
   private buildRefineForm(): void {
+    // Construct FormGroup instance with FormControls
     this.refineSearchForm = this.fb.group({
-      location: new FormControl(''),
-      checkIn: new FormControl(''),
-      checkOut: new FormControl(''),
-      guests: new FormControl(1, [Validators.min(1)]),
-      // Concept: FormArray for dynamically selectable quick amenities
-      quickAmenities: this.fb.array([
-        new FormControl(false),
-        new FormControl(false),
-        new FormControl(false),
-      ]),
+      location: new FormControl(this.searchLocation),
+      checkIn: new FormControl(this.searchCheckIn),
+      checkOut: new FormControl(this.searchCheckOut),
+      guests: new FormControl(this.searchGuests),
     });
   }
 
-  // Concept: Getter accessing FormArray controls
-  get quickAmenitiesFormArray(): FormArray {
-    return this.refineSearchForm.get('quickAmenities') as FormArray;
+  // LifeCycle Hook: ngAfterViewInit coordinates child view initializations
+  ngAfterViewInit(): void {
+    // Log view initialization status
+    console.debug('[ListingsComponent] View initialized with child components');
   }
 
-  // Method: Parse raw URL query params into typed FilterCriteria using Array.isArray, map, and filter
   private parseQueryParams(params: any): void {
-    // Concept: Array.isArray check to ensure amenities is handled as an array
-    const amenities: string[] = Array.isArray(params['amenities'])
-      ? params['amenities']
-      : params['amenities']
-      ? [params['amenities']]
+    // Extract amenities array from params
+    const amenities = params['amenities']
+      ? Array.isArray(params['amenities'])
+        ? params['amenities']
+        : [params['amenities']]
       : [];
 
-    // Concept: Mapping parameter values into typed filter structure
+    // Construct filter criteria object
     this.filters = {
       location: params['location'] || '',
       checkIn: params['checkIn'] || '',
@@ -174,175 +180,296 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
       pageSize: this.viewMode === 'map' ? 12 : 9,
     };
 
-    // Concept: Update local template properties
+    // Store search location
     this.searchLocation = this.filters.location || '';
+
+    // Store search check-in date
     this.searchCheckIn = this.filters.checkIn || '';
+
+    // Store search check-out date
     this.searchCheckOut = this.filters.checkOut || '';
+
+    // Store search guests count
     this.searchGuests = this.filters.guests || 1;
 
-    // Concept: Patching reactive form values with optional chaining (?.)
-    this.refineSearchForm.patchValue({
-      location: this.filters.location,
-      checkIn: this.filters.checkIn,
-      checkOut: this.filters.checkOut,
-      guests: this.filters.guests,
-    });
+    // Synchronize reactive form control values
+    if (this.refineSearchForm) {
+      // Patch values to form without triggering circular valueChanges
+      this.refineSearchForm.patchValue({
+        location: this.searchLocation,
+        checkIn: this.searchCheckIn,
+        checkOut: this.searchCheckOut,
+        guests: this.searchGuests,
+      }, { emitEvent: false });
+    }
   }
 
-  // Method: RxJS Subscribe pipeline querying hotel service for paginated results
+  // Method: Fetch listings from HotelService with setTimeout async calling and if-else branching
   fetchListings(): void {
+    // Activate loading indicator
     this.isLoading = true;
-    // Concept: RxJS Observable subscription with pipe, takeUntil, and finalize operators
-    this.hotelService
-      .searchHotels(this.filters)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => (this.isLoading = false))
-      )
-      .subscribe({
-        next: (res: PaginatedResult<Hotel>) => {
-          this.result = res;
-          this.hotels = res.items;
 
-          // Concept: Array.forEach() to inspect loaded hotels during debugging
-          this.hotels.forEach(h => {
-            console.debug(`[ListingItem] id: ${h.id}, name: ${h?.name}, price: $${h?.price}`);
-          });
-        },
-        error: (err: unknown) => {
-          // Concept: instanceof check for Error handling
-          if (err instanceof Error) {
-            console.error('[ListingsComponent] Error fetching listings:', err.message);
-          }
-        },
-      });
+    // Execute async calling simulation with setTimeout
+    setTimeout(() => {
+      // Calling HotelService method searchHotels
+      this.hotelService.searchHotels(this.filters)
+        .pipe(
+          takeUntil(this.destroy$),
+          finalize(() => {
+            // Turn off loading spinner
+            this.isLoading = false;
+
+            // Trigger change detection
+            this.cdr.markForCheck();
+          })
+        )
+        // Subscribe to paginated result Observable
+        .subscribe({
+          next: (res: PaginatedResult<Hotel>) => {
+            // Validate response and items array
+            if (res && Array.isArray(res.items)) {
+              // Assign paginated result
+              this.result = res;
+
+              // Assign hotels array
+              this.hotels = res.items;
+
+              // Clear previous hotel Map entries
+              this.hotelMap.clear();
+
+              // Clear previous category counts Map
+              this.categoryCountMap.clear();
+
+              // Clear unique locations Set
+              this.uniqueLocationsSet.clear();
+
+              // Clear unique amenities Set
+              this.availableAmenitiesSet.clear();
+
+              // Index retrieved items into Map and Set data structures
+              this.hotels.forEach(h => {
+                // Populate Map by hotel ID for O(1) lookups
+                this.hotelMap.set(h.id, h);
+
+                // Add distinct city location into Set
+                this.uniqueLocationsSet.add(h.city);
+
+                // Count hotel occurrences by category in Map
+                const currentCatCount = this.categoryCountMap.get(h.category) || 0;
+                // Increment category count in Map
+                this.categoryCountMap.set(h.category, currentCatCount + 1);
+
+                // Add each amenity into unique amenities Set
+                if (Array.isArray(h.amenities)) {
+                  // Iterate over individual hotel amenities
+                  h.amenities.forEach(a => this.availableAmenitiesSet.add(a));
+                }
+              });
+
+              // Log indexed stats
+              console.debug(`[ListingsComponent] Fetched ${res.items.length} stays, indexed in Map & Set`);
+            } else {
+              // Reset hotels array
+              this.hotels = [];
+
+              // Reset result object
+              this.result = null;
+
+              // Log missing hotels warning
+              console.warn('[ListingsComponent] No hotels found for criteria');
+            }
+            // Refresh view
+            this.cdr.markForCheck();
+          },
+          error: (err: unknown) => {
+            // Check if Error instance
+            if (err instanceof Error) {
+              // Log specific error message
+              console.error('[ListingsComponent] Search failed:', err.message);
+            } else {
+              // Log unknown error fallback
+              console.error('[ListingsComponent] Unknown search error occurred');
+            }
+          },
+        });
+    }, 200);
   }
 
-  // Method: Compute nights between checkIn and checkOut dates using Date instanceof and arithmetic
+  // Calculate number of nights based on dates
   get calculatedNights(): number {
-    // Concept: Optional chaining (?.) to check checkIn and checkOut strings
-    if (!this.filters?.checkIn || !this.filters?.checkOut) return 1;
-
+    if (!this.filters.checkIn || !this.filters.checkOut) return 1;
     const start = new Date(this.filters.checkIn);
     const end = new Date(this.filters.checkOut);
-
-    // Concept: instanceof check validating date objects
-    if (start instanceof Date && end instanceof Date && !isNaN(start.getTime()) && !isNaN(end.getTime())) {
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays > 0 ? diffDays : 1;
-    }
-    return 1;
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 1;
   }
 
-  // Method: Calculate total active filter count for badge display
+  // Active filter count for badge
   get activeFilterCount(): number {
     let count = 0;
-    if (this.filters?.category && this.filters.category !== 'all') count++;
-    if (this.filters?.minPrice !== null || this.filters?.maxPrice !== null) count++;
-    if (this.filters?.minRating !== null) count++;
-    // Concept: Array.isArray check on amenities
-    if (Array.isArray(this.filters?.amenities) && this.filters.amenities.length > 0) {
+    if (this.filters.category && this.filters.category !== 'all') count++;
+    if (this.filters.minPrice !== null || this.filters.maxPrice !== null) count++;
+    if (this.filters.minRating !== null) count++;
+    if (this.filters.amenities && this.filters.amenities.length > 0)
       count += this.filters.amenities.length;
-    }
-    if (this.filters?.superhostOnly) count++;
-    if (this.filters?.freeCancellationOnly) count++;
-    if (this.filters?.instantBookOnly) count++;
+    if (this.filters.superhostOnly) count++;
+    if (this.filters.freeCancellationOnly) count++;
+    if (this.filters.instantBookOnly) count++;
     return count;
   }
 
-  // Method: Handle category selection and update router query parameters
+  // Category Selection
   onSelectCategory(catValue: string): void {
     this.updateQueryParam({ category: catValue, page: 1 });
   }
 
-  // Method: Handle sort selection change
+  // Sorting
   onSortChange(sortBy: SortOption): void {
     this.updateQueryParam({ sortBy, page: 1 });
   }
 
-  // Method: Switch display mode between grid, list, and split interactive map
+  // View Mode
   setViewMode(mode: 'grid' | 'list' | 'map'): void {
     this.viewMode = mode;
     this.filters.pageSize = mode === 'map' ? 12 : 9;
     this.fetchListings();
   }
 
-  // Method: Receive updated filters from child filter component and sync to URL
+  // Filter component event
   onFiltersChanged(updatedFilters: FilterCriteria): void {
     this.updateQueryParam({
-      category: updatedFilters?.category || 'all',
-      minPrice: updatedFilters?.minPrice ?? null,
-      maxPrice: updatedFilters?.maxPrice ?? null,
-      minRating: updatedFilters?.minRating ?? null,
-      amenities: Array.isArray(updatedFilters?.amenities) && updatedFilters.amenities.length > 0
+      category: updatedFilters.category || 'all',
+      minPrice: updatedFilters.minPrice ?? null,
+      maxPrice: updatedFilters.maxPrice ?? null,
+      minRating: updatedFilters.minRating ?? null,
+      amenities: updatedFilters.amenities && updatedFilters.amenities.length > 0
         ? updatedFilters.amenities
         : null,
-      superhostOnly: updatedFilters?.superhostOnly ? 'true' : null,
-      freeCancellationOnly: updatedFilters?.freeCancellationOnly ? 'true' : null,
-      instantBookOnly: updatedFilters?.instantBookOnly ? 'true' : null,
+      superhostOnly: updatedFilters.superhostOnly ? 'true' : null,
+      freeCancellationOnly: updatedFilters.freeCancellationOnly ? 'true' : null,
+      instantBookOnly: updatedFilters.instantBookOnly ? 'true' : null,
       page: 1,
     });
   }
 
-  // Method: Submit refine search form values
+  // Search Refinement Form Submit with Form Validation, if-else conditions, and setTimeout async calling
   onRefineSearch(): void {
-    this.isSearchDropdownOpen = false;
+    // Validate Reactive Form validity
+    if (this.refineSearchForm && this.refineSearchForm.valid) {
+      // Close dropdown menu
+      this.isSearchDropdownOpen = false;
 
-    this.updateQueryParam({
-      location: this.searchLocation ? this.searchLocation.trim() : null,
-      checkIn: this.searchCheckIn || null,
-      checkOut: this.searchCheckOut || null,
-      guests: this.searchGuests && this.searchGuests > 1 ? this.searchGuests : null,
-      page: 1,
-    });
+      // Set loading indicator
+      this.isLoading = true;
+
+      // Execute simulated latency via setTimeout
+      setTimeout(() => {
+        // Retrieve location control with form.get()
+        const locCtrl = this.refineSearchForm.get('location');
+        // Retrieve checkIn control with form.get()
+        const inCtrl = this.refineSearchForm.get('checkIn');
+        // Retrieve checkOut control with form.get()
+        const outCtrl = this.refineSearchForm.get('checkOut');
+        // Retrieve guests control with form.get()
+        const gstCtrl = this.refineSearchForm.get('guests');
+
+        // Extract trimmed location string
+        this.searchLocation = locCtrl?.value ? String(locCtrl.value).trim() : '';
+        // Extract check-in string
+        this.searchCheckIn = inCtrl?.value ? String(inCtrl.value).trim() : '';
+        // Extract check-out string
+        this.searchCheckOut = outCtrl?.value ? String(outCtrl.value).trim() : '';
+        // Extract guest count number
+        this.searchGuests = gstCtrl?.value ? Number(gstCtrl.value) : 1;
+
+        // Build query parameters object
+        const params: any = {
+          location: this.searchLocation.length > 0 ? this.searchLocation : null,
+          checkIn: this.searchCheckIn || null,
+          checkOut: this.searchCheckOut || null,
+          guests: this.searchGuests > 1 ? this.searchGuests : null,
+          page: 1,
+        };
+
+        // Update URL query parameters
+        this.updateQueryParam(params);
+      }, 250);
+    } else if (this.refineSearchForm) {
+      // Mark all controls touched to show errors
+      this.refineSearchForm.markAllAsTouched();
+
+      // Log validation warning
+      console.warn('[ListingsComponent] Refine search form is invalid');
+    } else {
+      // Dismiss dropdown
+      this.isSearchDropdownOpen = false;
+    }
   }
 
-  // Method: Remove a specific individual filter chip
+  // Quick Remove of specific active filter with if-else branching
   removeFilter(filterKey: string, value?: string): void {
+    // Check if category filter
     if (filterKey === 'category') {
+      // Reset category to all
       this.updateQueryParam({ category: 'all', page: 1 });
     } else if (filterKey === 'price') {
+      // Reset min and max price limits
       this.updateQueryParam({ minPrice: null, maxPrice: null, page: 1 });
     } else if (filterKey === 'rating') {
+      // Reset rating threshold
       this.updateQueryParam({ minRating: null, page: 1 });
     } else if (filterKey === 'amenity' && value) {
-      // Concept: Array.filter() to remove unselected amenity
+      // Filter out selected amenity using Array.filter()
       const remaining = (this.filters.amenities || []).filter(a => a !== value);
+      // Update amenities query param
       this.updateQueryParam({
         amenities: remaining.length > 0 ? remaining : null,
         page: 1,
       });
     } else if (filterKey === 'superhost') {
+      // Reset superhost filter
       this.updateQueryParam({ superhostOnly: null, page: 1 });
     } else if (filterKey === 'cancellation') {
+      // Reset free cancellation filter
       this.updateQueryParam({ freeCancellationOnly: null, page: 1 });
     } else if (filterKey === 'instant') {
+      // Reset instant book filter
       this.updateQueryParam({ instantBookOnly: null, page: 1 });
+    } else if (filterKey === 'location') {
+      // Reset search location
+      this.searchLocation = '';
+      // Clear location query param
+      this.updateQueryParam({ location: null, page: 1 });
     }
   }
 
-  // Method: Reset all filters while preserving core search parameters
+  // Reset all filters to default baseline
   resetAllFilters(): void {
+    // Navigate with cleared query parameters
     this.router.navigate(['/listings'], {
       queryParams: {
-        location: this.filters?.location || null,
-        checkIn: this.filters?.checkIn || null,
-        checkOut: this.filters?.checkOut || null,
-        guests: this.filters?.guests && this.filters.guests > 1 ? this.filters.guests : null,
+        location: this.filters.location || null,
+        checkIn: this.filters.checkIn || null,
+        checkOut: this.filters.checkOut || null,
+        guests: this.filters.guests && this.filters.guests > 1 ? this.filters.guests : null,
       },
     });
   }
 
-  // Method: Navigate to selected page number with smooth scroll
+  // Navigate to specific pagination page
   goToPage(pageNum: number): void {
+    // Guard against out of range page numbers
     if (pageNum < 1 || (this.result && pageNum > this.result.totalPages)) return;
+    // Update page query parameter
     this.updateQueryParam({ page: pageNum });
+    // Smooth scroll to top of listing view
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // Method: Merge and push query parameters to the Angular router
+  // Synchronize params to URL with Angular router
   private updateQueryParam(newParams: any): void {
+    // Merge new params into active route
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: newParams,
@@ -350,52 +477,77 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // Method: Open the Quick View modal dialog for a selected hotel
+  // Open Quick View Modal for hotel
   openQuickView(hotel: Hotel): void {
+    // Set active quick view hotel
     this.selectedHotelForQuickView = hotel;
   }
 
-  // Method: Close the Quick View modal dialog
+  // Dismiss Quick View Modal
   closeQuickView(): void {
+    // Clear quick view selection
     this.selectedHotelForQuickView = null;
   }
 
-  // Method: Navigate to hotel details route
+  // Navigate to hotel details page
   navigateToListing(hotelId: number): void {
+    // Perform router navigation
     this.router.navigate(['/listings', hotelId]);
   }
 
-  // Method: Sync hovered hotel ID with map pin marker
+  // Map pin hover synchronization
   onHotelHover(hotelId: number | null): void {
+    // Assign hovered hotel ID
     this.hoveredHotelId = hotelId;
   }
 
-  // Method: Select map marker on user click
+  // Map pin click handler
   onMapMarkerClick(hotel: Hotel): void {
-    this.selectedHotelId = hotel?.id ?? null;
+    // Update selected hotel ID
+    this.selectedHotelId = hotel.id;
   }
 
-  // Method: Toggle mobile filter drawer
+  // Toggle filter drawer sliding visibility
   toggleFilterDrawer(): void {
+    // Invert boolean state
     this.isFilterDrawerOpen = !this.isFilterDrawerOpen;
   }
 
-  // Method: Toggle compact search dropdown modal
+  // Close filter drawer
+  closeFilterDrawer(): void {
+    // Set drawer flag to false
+    this.isFilterDrawerOpen = false;
+  }
+
+  // Toggle search dropdown modal
   toggleSearchDropdown(): void {
+    // Invert search dropdown state
     this.isSearchDropdownOpen = !this.isSearchDropdownOpen;
   }
 
-  // Method: TrackBy optimization function for *ngFor directives
-  trackByHotel(_: number, item: Hotel): number {
-    return item?.id;
+  // Close search dropdown modal
+  closeSearchDropdown(): void {
+    // Dismiss dropdown
+    this.isSearchDropdownOpen = false;
   }
 
-  // LifeCycle Hook: ngOnDestroy triggers cleanup to prevent memory leaks
+  // Stop mouse event propagation
+  stopEventPropagation(event: MouseEvent): void {
+    // Halt event bubbling
+    event.stopPropagation();
+  }
+
+  // TrackBy optimization for hotel list
+  trackByHotel(_: number, item: Hotel): number {
+    // Return unique hotel ID
+    return item.id;
+  }
+
+  // LifeCycle Hook: ngOnDestroy cleanup
   ngOnDestroy(): void {
-    // Concept: Emitting next() and complete() on destroy$ Subject
+    // Trigger unsubscription
     this.destroy$.next();
+    // Complete subject
     this.destroy$.complete();
-    // Concept: Debugging log for component destruction
-    console.debug('[ListingsComponent] Destroyed and unsubscribed successfully');
   }
 }

@@ -639,3 +639,38 @@
   }
 }
 
+/* ===== MARKET INDEX TABLE ===== */
+.market-index-table-wrap {
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  overflow-x: auto;
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-white);
+}
+
+.market-index-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.market-index-table th {
+  background: var(--color-gray-100);
+  padding: 6px 12px;
+  font-weight: 700;
+  color: var(--color-gray-700);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.market-index-table td {
+  padding: 6px 12px;
+  color: var(--color-gray-800);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+

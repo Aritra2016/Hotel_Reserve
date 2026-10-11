@@ -5,6 +5,7 @@
   (click)="onCardClick()"
   (mouseenter)="onMouseEnter()"
   (mouseleave)="onMouseLeave()"
+  data-action="onCardClick()"
 >
   <!-- Image Carousel -->
   <div class="hotel-card__media">
@@ -22,6 +23,7 @@
       type="button"
       class="carousel-btn carousel-btn--prev"
       (click)="prevImage($event)"
+      data-action="prevImage($event)"
       aria-label="Previous image"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -34,6 +36,7 @@
       type="button"
       class="carousel-btn carousel-btn--next"
       (click)="nextImage($event)"
+      data-action="nextImage($event)"
       aria-label="Next image"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -48,6 +51,7 @@
         class="carousel-dot"
         [class.carousel-dot--active]="idx === currentImageIndex"
         (click)="selectImage(idx, $event)"
+        data-action="selectImage(idx, $event)"
       ></span>
     </div>
 
@@ -57,6 +61,7 @@
       class="favorite-btn"
       [class.favorite-btn--active]="isFavorite"
       (click)="toggleFavorite($event)"
+      data-action="toggleFavorite($event)"
       [attr.aria-label]="isFavorite ? 'Remove from wishlist' : 'Save to wishlist'"
     >
       <svg width="20" height="20" viewBox="0 0 24 24" [attr.fill]="isFavorite ? 'var(--color-primary)' : 'rgba(0,0,0,0.4)'" stroke="white" stroke-width="1.8">
@@ -83,6 +88,7 @@
       type="button"
       class="quick-view-btn"
       (click)="onQuickView($event)"
+      data-action="onQuickView($event)"
       title="Quick View Details"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -120,6 +126,28 @@
       <span>{{ hotel.bathrooms }} {{ hotel.bathrooms === 1 ? 'bath' : 'baths' }}</span>
     </div>
 
+    <!-- Compact Property Capacity Table -->
+    <div class="card-specs-table-wrap">
+      <table class="card-specs-table" aria-label="Room Capacity and Pricing">
+        <thead>
+          <tr>
+            <th>Max Guests</th>
+            <th>Beds</th>
+            <th>Baths</th>
+            <th>Nightly Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ hotel.maxGuests }}</td>
+            <td>{{ hotel.beds }}</td>
+            <td>{{ hotel.bathrooms }}</td>
+            <td>${{ hotel.price }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- Amenities Chips -->
     <div class="hotel-card__amenities">
       <span class="amenity-chip" *ngFor="let am of hotel.amenities.slice(0, 3)">
@@ -153,7 +181,7 @@
         </span>
       </div>
 
-      <button type="button" class="book-now-btn" (click)="onCardClick()">
+      <button type="button" class="book-now-btn" (click)="onCardClick()" data-action="onCardClick()">
         <span>Details</span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="5" y1="12" x2="19" y2="12"></line>

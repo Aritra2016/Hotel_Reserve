@@ -16,7 +16,7 @@
       </nav>
 
       <div class="details-actions">
-        <button type="button" class="action-btn" (click)="onShare()">
+        <button type="button" class="action-btn" (click)="onShare()" data-action="onShare()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
             <polyline points="16 6 12 2 8 6"/>
@@ -25,7 +25,7 @@
           <span>Share</span>
         </button>
 
-        <button type="button" class="action-btn" [class.action-btn--active]="isFavorite" (click)="toggleFavorite()">
+        <button type="button" class="action-btn" [class.action-btn--active]="isFavorite" (click)="toggleFavorite()" data-action="toggleFavorite()">
           <svg width="18" height="18" viewBox="0 0 24 24" [attr.fill]="isFavorite ? 'var(--color-primary)' : 'none'" [attr.stroke]="isFavorite ? 'var(--color-primary)' : 'currentColor'" stroke-width="2">
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
           </svg>
@@ -54,7 +54,7 @@
 
     <!-- Photo Collage Gallery -->
     <div class="gallery-collage">
-      <div class="gallery-main" (click)="openLightbox(0)">
+      <div class="gallery-main" (click)="openLightbox(0)" data-action="openLightbox(0)">
         <img [src]="galleryImages[0]" [alt]="hotel.name" appImgFallback />
         <div class="gallery-overlay">
           <span>Click to view photos</span>
@@ -65,11 +65,12 @@
           class="gallery-thumb"
           *ngFor="let img of galleryImages.slice(1, 5); let i = index"
           (click)="openLightbox(i + 1)"
+          data-action="openLightbox(i + 1)"
         >
           <img [src]="img" [alt]="hotel.name" appImgFallback />
         </div>
       </div>
-      <button type="button" class="show-all-photos-btn" (click)="openLightbox(0)">
+      <button type="button" class="show-all-photos-btn" (click)="openLightbox(0)" data-action="openLightbox(0)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="7"/>
           <rect x="14" y="3" width="7" height="7"/>
@@ -102,6 +103,36 @@
             <span class="spec-icon">🚿</span>
             <span><strong>{{ hotel.bathrooms }}</strong> bath{{ hotel.bathrooms > 1 ? 's' : '' }}</span>
           </div>
+        </div>
+
+        <!-- Property Specifications Table -->
+        <div class="property-specs-table-wrap">
+          <table class="specs-data-table" aria-label="Property Specifications">
+            <thead>
+              <tr>
+                <th>Property Spec</th>
+                <th>Capacity / Details</th>
+                <th>Policy & Amenities</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Guest Capacity</td>
+                <td>Up to {{ hotel.maxGuests }} Guests</td>
+                <td>{{ hotel.bedrooms }} Bedroom(s) · {{ hotel.beds }} Bed(s)</td>
+              </tr>
+              <tr>
+                <td>Bathrooms</td>
+                <td>{{ hotel.bathrooms }} Private Bathroom(s)</td>
+                <td>Towels & Toiletries Included</td>
+              </tr>
+              <tr>
+                <td>Check-in Schedule</td>
+                <td>Flexible 3:00 PM Check-in</td>
+                <td>11:00 AM Prompt Check-out</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <hr class="section-divider" />
@@ -259,7 +290,7 @@
             </div>
 
             <!-- Guests Dropdown Trigger -->
-            <div class="guests-selector" (click)="isGuestsDropdownOpen = !isGuestsDropdownOpen">
+            <div class="guests-selector" (click)="toggleGuestsDropdown()" data-action="toggleGuestsDropdown()">
               <div class="guests-label-wrap">
                 <label>GUESTS</label>
                 <span class="guests-val">{{ totalGuestsLabel }}</span>
@@ -269,16 +300,16 @@
               </svg>
 
               <!-- Guests Dropdown Menu -->
-              <div class="guests-menu" *ngIf="isGuestsDropdownOpen" (click)="$event.stopPropagation()">
+              <div class="guests-menu" *ngIf="isGuestsDropdownOpen" (click)="stopEventPropagation($event)" data-action="stopEventPropagation($event)">
                 <div class="stepper-row">
                   <div>
                     <span class="stepper-title">Adults</span>
                     <span class="stepper-sub">Age 13+</span>
                   </div>
                   <div class="stepper-btns">
-                    <button type="button" (click)="updateGuests('adults', -1)" [disabled]="adultsCount <= 1">−</button>
+                    <button type="button" (click)="updateGuests('adults', -1)" [disabled]="adultsCount <= 1" data-action="updateGuests('adults', -1)">−</button>
                     <span>{{ adultsCount }}</span>
-                    <button type="button" (click)="updateGuests('adults', 1)" [disabled]="totalGuestsCount >= hotel.maxGuests">+</button>
+                    <button type="button" (click)="updateGuests('adults', 1)" [disabled]="totalGuestsCount >= hotel.maxGuests" data-action="updateGuests('adults', 1)">+</button>
                   </div>
                 </div>
 
@@ -288,21 +319,21 @@
                     <span class="stepper-sub">Ages 2–12</span>
                   </div>
                   <div class="stepper-btns">
-                    <button type="button" (click)="updateGuests('children', -1)" [disabled]="childrenCount <= 0">−</button>
+                    <button type="button" (click)="updateGuests('children', -1)" [disabled]="childrenCount <= 0" data-action="updateGuests('children', -1)">−</button>
                     <span>{{ childrenCount }}</span>
-                    <button type="button" (click)="updateGuests('children', 1)" [disabled]="totalGuestsCount >= hotel.maxGuests">+</button>
+                    <button type="button" (click)="updateGuests('children', 1)" [disabled]="totalGuestsCount >= hotel.maxGuests" data-action="updateGuests('children', 1)">+</button>
                   </div>
                 </div>
 
                 <div class="guests-menu-footer">
-                  <button type="button" class="btn-done" (click)="isGuestsDropdownOpen = false">Done</button>
+                  <button type="button" class="btn-done" (click)="closeGuestsDropdown()" data-action="closeGuestsDropdown()">Done</button>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Bold, High-Visibility Reserve CTA Button -->
-          <button type="button" class="btn-reserve" (click)="openCheckoutModal()">
+          <button type="button" class="btn-reserve" (click)="openCheckoutModal()" data-action="openCheckoutModal()">
             <span>Reserve / Book Now</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -312,37 +343,43 @@
 
           <p class="charge-note">You won't be charged yet</p>
 
-          <!-- Price Calculation Breakdown -->
+          <!-- Price Calculation Ledger Table -->
           <div class="price-breakdown">
-            <div class="price-row">
-              <span>${{ hotel.price }} × {{ calculatedNights }} nights</span>
-              <span>${{ basePriceTotal }}</span>
-            </div>
-
-            <div class="price-row" *ngIf="discountTotal > 0">
-              <span class="discount-label">Special Discount ({{ hotel.discountPercent }}%)</span>
-              <span class="discount-val">−${{ discountTotal }}</span>
-            </div>
-
-            <div class="price-row">
-              <span>Cleaning fee</span>
-              <span>${{ cleaningFeeTotal }}</span>
-            </div>
-
-            <div class="price-row">
-              <span>StayEase service fee</span>
-              <span>${{ serviceFeeTotal }}</span>
-            </div>
-
-            <hr class="price-divider" />
-
-            <div class="price-row price-row--total">
-              <strong>Total before taxes</strong>
-              <div class="price-totals-dual">
-                <span class="total-inr">₹{{ grandTotalInr }}</span>
-                <strong class="total-usd">${{ grandTotal }}</strong>
-              </div>
-            </div>
+            <table class="pricing-ledger-table" aria-label="Reservation Price Calculation">
+              <thead>
+                <tr>
+                  <th>Fee Description</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>${{ hotel.price }} × {{ calculatedNights }} nights</td>
+                  <td>${{ basePriceTotal }}</td>
+                </tr>
+                <tr *ngIf="discountTotal > 0">
+                  <td>Special Discount ({{ hotel.discountPercent }}%)</td>
+                  <td>−${{ discountTotal }}</td>
+                </tr>
+                <tr>
+                  <td>Cleaning fee</td>
+                  <td>${{ cleaningFeeTotal }}</td>
+                </tr>
+                <tr>
+                  <td>StayEase service fee</td>
+                  <td>${{ serviceFeeTotal }}</td>
+                </tr>
+                <tr class="ledger-total-row">
+                  <td><strong>Total before taxes</strong></td>
+                  <td>
+                    <div class="price-totals-dual">
+                      <span class="total-inr">₹{{ grandTotalInr }}</span>
+                      <strong class="total-usd">${{ grandTotal }}</strong>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <div class="booking-guarantee">
@@ -354,12 +391,12 @@
   </div>
 
   <!-- ===== FULLSCREEN PHOTO LIGHTBOX MODAL ===== -->
-  <div class="lightbox-modal" *ngIf="isLightboxOpen" (click)="closeLightbox()">
-    <button type="button" class="lightbox-close" (click)="closeLightbox()">✕</button>
-    <div class="lightbox-content" (click)="$event.stopPropagation()">
-      <button type="button" class="lightbox-nav-btn lightbox-nav--prev" (click)="prevPhoto($event)">‹</button>
+  <div class="lightbox-modal" *ngIf="isLightboxOpen" (click)="closeLightbox()" data-action="closeLightbox()">
+    <button type="button" class="lightbox-close" (click)="closeLightbox()" data-action="closeLightbox()">✕</button>
+    <div class="lightbox-content" (click)="stopEventPropagation($event)" data-action="stopEventPropagation($event)">
+      <button type="button" class="lightbox-nav-btn lightbox-nav--prev" (click)="prevPhoto($event)" data-action="prevPhoto($event)">‹</button>
       <img [src]="galleryImages[activePhotoIndex]" [alt]="hotel.name" class="lightbox-img" appImgFallback />
-      <button type="button" class="lightbox-nav-btn lightbox-nav--next" (click)="nextPhoto($event)">›</button>
+      <button type="button" class="lightbox-nav-btn lightbox-nav--next" (click)="nextPhoto($event)" data-action="nextPhoto($event)">›</button>
     </div>
     <div class="lightbox-counter">
       <span>{{ activePhotoIndex + 1 }} / {{ galleryImages.length }}</span>
@@ -367,10 +404,10 @@
   </div>
 
   <!-- ===== HIGH-VISIBILITY MULTI-STEP BOOKING & CHECKOUT MODAL ===== -->
-  <div class="checkout-modal-backdrop" *ngIf="isCheckoutModalOpen" (click)="closeCheckoutModal()">
-    <div class="checkout-modal-dialog" (click)="$event.stopPropagation()">
+  <div class="checkout-modal-backdrop" *ngIf="isCheckoutModalOpen" (click)="closeCheckoutModal()" data-action="closeCheckoutModal()">
+    <div class="checkout-modal-dialog" (click)="stopEventPropagation($event)" data-action="stopEventPropagation($event)">
       <!-- Close Button -->
-      <button type="button" class="checkout-close" (click)="closeCheckoutModal()" aria-label="Close dialog">✕</button>
+      <button type="button" class="checkout-close" (click)="closeCheckoutModal()" aria-label="Close dialog" data-action="closeCheckoutModal()">✕</button>
 
       <!-- Modal Steps Header -->
       <div class="checkout-stepper" *ngIf="checkoutStep !== 'confirmed'">
@@ -445,7 +482,7 @@
         </div>
 
         <div class="step-actions">
-          <button type="button" class="btn-step-next" (click)="goToCheckoutStep('guest_info')">
+          <button type="button" class="btn-step-next" (click)="goToCheckoutStep('guest_info')" data-action="goToCheckoutStep('guest_info')">
             <span>Continue to Guest Details</span> →
           </button>
         </div>
@@ -500,7 +537,7 @@
           <div class="additional-guests-section" *ngIf="adultsCount > 1">
             <div class="ag-header">
               <h4>Additional Guest Names (Optional)</h4>
-              <button type="button" class="btn-add-guest" (click)="addAdditionalGuest()">+ Add Guest</button>
+              <button type="button" class="btn-add-guest" (click)="addAdditionalGuest()" data-action="addAdditionalGuest()">+ Add Guest</button>
             </div>
 
             <div formArrayName="additionalGuests">
@@ -510,14 +547,14 @@
                 class="ag-row"
               >
                 <input type="text" formControlName="fullName" [placeholder]="'Guest #' + (idx + 2) + ' Full Name'" />
-                <button type="button" class="btn-remove-guest" (click)="removeAdditionalGuest(idx)">✕</button>
+                <button type="button" class="btn-remove-guest" (click)="removeAdditionalGuest(idx)" data-action="removeAdditionalGuest(idx)">✕</button>
               </div>
             </div>
           </div>
 
           <div class="step-actions">
-            <button type="button" class="btn-step-back" (click)="goToCheckoutStep('review')">← Back</button>
-            <button type="button" class="btn-step-next" (click)="goToCheckoutStep('payment')">
+            <button type="button" class="btn-step-back" (click)="goToCheckoutStep('review')" data-action="goToCheckoutStep('review')">← Back</button>
+            <button type="button" class="btn-step-next" (click)="goToCheckoutStep('payment')" data-action="goToCheckoutStep('payment')">
               <span>Continue to Payment</span> →
             </button>
           </div>
@@ -609,7 +646,7 @@
               </div>
             </div>
 
-            <button type="button" class="btn-razorpay-launch" (click)="openRazorpayGateway()">
+            <button type="button" class="btn-razorpay-launch" (click)="openRazorpayGateway()" data-action="openRazorpayGateway()">
               <span class="rzp-btn-icon">⚡</span>
               <span>Proceed to Razorpay (Mobile OTP)</span>
               <span class="rzp-btn-arrow">→</span>
@@ -636,6 +673,7 @@
                 placeholder="4568 8965 8956 1032"
                 maxlength="19"
                 (input)="onCardNumberInput($event)"
+                data-action="onCardNumberInput($event)"
               />
               <span class="form-error" *ngIf="checkoutForm.get('cardNumber')?.touched && checkoutForm.get('cardNumber')?.invalid">
                 Enter a valid 16-digit card number
@@ -651,6 +689,7 @@
                   placeholder="10/28"
                   maxlength="5"
                   (input)="onExpiryInput($event)"
+                  data-action="onExpiryInput($event)"
                 />
                 <span class="form-error" *ngIf="checkoutForm.get('expiryDate')?.touched && checkoutForm.get('expiryDate')?.invalid">
                   Valid MM/YY required
@@ -665,7 +704,7 @@
               </div>
             </div>
 
-            <button type="submit" class="btn-direct-pay" [disabled]="isProcessingPayment">
+            <button type="submit" class="btn-direct-pay" [disabled]="isProcessingPayment" data-action="submitDirectPayment()">
               <span *ngIf="!isProcessingPayment">Pay ${{ grandTotal }} via Card</span>
               <span *ngIf="isProcessingPayment">Processing Card Payment... ⏳</span>
             </button>
@@ -683,7 +722,7 @@
           </div>
 
           <div class="step-actions">
-            <button type="button" class="btn-step-back" (click)="goToCheckoutStep('guest_info')">← Back to Guests</button>
+            <button type="button" class="btn-step-back" (click)="goToCheckoutStep('guest_info')" data-action="goToCheckoutStep('guest_info')">← Back to Guests</button>
           </div>
         </form>
       </div>
@@ -744,16 +783,16 @@
         </div>
 
         <div class="conf-actions">
-          <button type="button" class="btn-conf-home" (click)="goToHome()">Return to Home</button>
-          <button type="button" class="btn-conf-listings" (click)="goBackToListings()">Explore More Stays</button>
+          <button type="button" class="btn-conf-home" (click)="goToHome()" data-action="goToHome()">Return to Home</button>
+          <button type="button" class="btn-conf-listings" (click)="goBackToListings()" data-action="goBackToListings()">Explore More Stays</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ===== RAZORPAY SANDBOX GATEWAY MODAL (WITH MOBILE OTP VERIFICATION) ===== -->
-  <div class="razorpay-gateway-backdrop" *ngIf="isRazorpayModalOpen" (click)="isRazorpayModalOpen = false">
-    <div class="razorpay-gateway-modal" (click)="$event.stopPropagation()">
+  <div class="razorpay-gateway-backdrop" *ngIf="isRazorpayModalOpen" (click)="closeRazorpayModal()" data-action="closeRazorpayModal()">
+    <div class="razorpay-gateway-modal" (click)="stopEventPropagation($event)" data-action="stopEventPropagation($event)">
       <!-- Razorpay Top Banner -->
       <div class="rzp-modal-header">
         <div class="rzp-logo-group">
@@ -765,7 +804,7 @@
         </div>
         <div class="rzp-header-right">
           <span class="rzp-test-badge">SANDBOX TEST MODE</span>
-          <button type="button" class="rzp-close-btn" (click)="isRazorpayModalOpen = false">✕</button>
+          <button type="button" class="rzp-close-btn" (click)="closeRazorpayModal()" data-action="closeRazorpayModal()">✕</button>
         </div>
       </div>
 
@@ -792,9 +831,9 @@
         </div>
 
         <!-- Demo OTP Helper Tag -->
-        <div class="rzp-demo-helper" (click)="autoFillTestOtp()">
+        <div class="rzp-demo-helper" (click)="autoFillTestOtp()" data-action="autoFillTestOtp()">
           <span>🔑 Demo Sandbox OTP: <strong>123456</strong></span>
-          <button type="button" class="btn-autofill-otp">Auto-Fill</button>
+          <button type="button" class="btn-autofill-otp" (click)="autoFillTestOtp()" data-action="autoFillTestOtp()">Auto-Fill</button>
         </div>
 
         <!-- OTP Input Field -->
@@ -818,7 +857,7 @@
         <!-- Resend OTP Timer -->
         <div class="rzp-resend-row">
           <span *ngIf="otpCountdown > 0" class="rzp-timer">Resend OTP in <strong>{{ otpCountdown }}s</strong></span>
-          <button *ngIf="otpCountdown === 0" type="button" class="btn-resend-otp" (click)="sendRazorpayOtp()">
+          <button *ngIf="otpCountdown === 0" type="button" class="btn-resend-otp" (click)="sendRazorpayOtp()" data-action="sendRazorpayOtp()">
             🔄 Resend OTP
           </button>
         </div>
@@ -829,6 +868,7 @@
           class="btn-rzp-verify-pay"
           [disabled]="isVerifyingOtp"
           (click)="verifyRazorpayOtpAndPay()"
+          data-action="verifyRazorpayOtpAndPay()"
         >
           <span *ngIf="!isVerifyingOtp">✓ Verify OTP & Pay ₹{{ grandTotalInr }}</span>
           <span *ngIf="isVerifyingOtp">Verifying OTP with Bank... ⏳</span>

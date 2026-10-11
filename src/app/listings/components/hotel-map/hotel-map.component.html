@@ -47,6 +47,7 @@
       [class.map-pin--hovered]="hoveredHotelId === hotel.id"
       [class.map-pin--selected]="selectedHotelPopup?.id === hotel.id"
       (click)="onPinClick(hotel, $event)"
+      data-action="onPinClick(hotel, $event)"
     >
       <span class="pin-price">${{ hotel.price }}</span>
     </div>
@@ -55,9 +56,10 @@
     <div
       class="map-popup"
       *ngIf="selectedHotelPopup"
-      (click)="$event.stopPropagation()"
+      (click)="onPopupClick($event)"
+      data-action="onPopupClick($event)"
     >
-      <button class="popup-close-btn" (click)="closePopup($event)">×</button>
+      <button class="popup-close-btn" (click)="closePopup($event)" data-action="closePopup($event)">×</button>
       <img [src]="selectedHotelPopup.imageUrl" [alt]="selectedHotelPopup.name" class="popup-img" />
       <div class="popup-info">
         <div class="popup-rating">
@@ -66,12 +68,31 @@
           <span class="popup-reviews">({{ selectedHotelPopup.reviewCount }})</span>
         </div>
         <h5 class="popup-title">{{ selectedHotelPopup.name }}</h5>
+
+        <!-- Compact Map Popup Specs Table -->
+        <table class="popup-specs-table" aria-label="Stay Summary">
+          <thead>
+            <tr>
+              <th>Rating</th>
+              <th>Nightly</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>★ {{ selectedHotelPopup.rating }}</td>
+              <td>${{ selectedHotelPopup.price }}</td>
+              <td>{{ selectedHotelPopup.category || 'Stay' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
         <div class="popup-footer">
           <div class="popup-price">
             <strong>${{ selectedHotelPopup.price }}</strong>
             <span> / night</span>
           </div>
-          <button class="popup-view-btn" (click)="onViewHotel(selectedHotelPopup.id, $event)">
+          <button class="popup-view-btn" (click)="onViewHotel(selectedHotelPopup.id, $event)" data-action="onViewHotel(selectedHotelPopup.id, $event)">
             View
           </button>
         </div>
@@ -81,13 +102,13 @@
 
   <!-- Map Controls -->
   <div class="map-controls">
-    <button type="button" class="ctrl-btn" (click)="toggleMapType()" title="Toggle Satellite Layer">
+    <button type="button" class="ctrl-btn" (click)="toggleMapType()" data-action="toggleMapType()" title="Toggle Satellite Layer">
       {{ mapType === 'street' ? '🛰️' : '🗺️' }}
     </button>
     <div class="zoom-group">
-      <button type="button" class="ctrl-btn" (click)="zoomIn()" title="Zoom In">+</button>
+      <button type="button" class="ctrl-btn" (click)="zoomIn()" data-action="zoomIn()" title="Zoom In">+</button>
       <div class="ctrl-divider"></div>
-      <button type="button" class="ctrl-btn" (click)="zoomOut()" title="Zoom Out">−</button>
+      <button type="button" class="ctrl-btn" (click)="zoomOut()" data-action="zoomOut()" title="Zoom Out">−</button>
     </div>
   </div>
 </div>

@@ -1,0 +1,137 @@
+<div class="trips-modal-backdrop" *ngIf="isOpen" (click)="onClose()">
+  <div class="trips-modal-dialog" (click)="onDialogClick($event)">
+    <!-- Close Button -->
+    <button
+      type="button"
+      class="modal-close-btn"
+      data-action="onClose()"
+      (click)="onClose()"
+      aria-label="Close dialog"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+
+    <!-- Header -->
+    <div class="trips-header">
+      <div class="header-title-row">
+        <h2>My Trips & Bookings</h2>
+        <span class="trips-count-badge" *ngIf="(bookings$ | async)?.length as count">
+          {{ count }} {{ count === 1 ? 'Stay' : 'Stays' }}
+        </span>
+      </div>
+      <p class="header-desc">View your upcoming and confirmed hotel reservations on StayEase</p>
+    </div>
+
+    <!-- Bookings List -->
+    <div class="trips-content" *ngIf="(bookings$ | async) as bookings">
+      <div class="trips-list" *ngIf="bookings.length > 0; else noBookings">
+        <div class="trip-card" *ngFor="let b of bookings">
+          <div class="trip-card-header">
+            <div class="trip-ref">
+              <span class="ref-label">RESERVATION REF:</span>
+              <strong class="ref-id">{{ b.bookingId }}</strong>
+            </div>
+            <span class="status-pill status-pill--confirmed">
+              ✓ Confirmed
+            </span>
+          </div>
+
+          <div class="trip-card-body">
+            <div class="property-info">
+              <h3 class="property-name">{{ b.request.hotelName }}</h3>
+              <p class="property-location">📍 {{ b.request.hotelLocation }}</p>
+            </div>
+
+            <div class="trip-meta-grid">
+              <div class="meta-box">
+                <span class="meta-label">Check-in</span>
+                <strong class="meta-val">{{ b.request.checkIn }}</strong>
+              </div>
+              <div class="meta-box">
+                <span class="meta-label">Check-out</span>
+                <strong class="meta-val">{{ b.request.checkOut }}</strong>
+              </div>
+              <div class="meta-box">
+                <span class="meta-label">Duration</span>
+                <strong class="meta-val">{{ b.request.nights }} {{ b.request.nights === 1 ? 'Night' : 'Nights' }}</strong>
+              </div>
+              <div class="meta-box">
+                <span class="meta-label">Guests</span>
+                <strong class="meta-val">{{ b.request.guestsCount }} {{ b.request.guestsCount === 1 ? 'Guest' : 'Guests' }}</strong>
+              </div>
+            </div>
+
+            <!-- Formal Reservation Receipt Table -->
+            <div class="trip-table-wrap">
+              <table class="trip-receipt-table" aria-label="Reservation Schedule and Receipt">
+                <thead>
+                  <tr>
+                    <th>Check-In</th>
+                    <th>Check-Out</th>
+                    <th>Duration</th>
+                    <th>Guests</th>
+                    <th>Amount Paid</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{{ b.request.checkIn }}</td>
+                    <td>{{ b.request.checkOut }}</td>
+                    <td>{{ b.request.nights }} Nights</td>
+                    <td>{{ b.request.guestsCount }} Guests</td>
+                    <td>${{ b.request.grandTotal }} USD</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="trip-payment-row">
+              <div class="payment-method-info">
+                <span class="pm-label">Payment:</span>
+                <span class="pm-badge" *ngIf="b.request.payment.paymentMethod === 'razorpay'">
+                  ⚡ Razorpay Verified (OTP: {{ b.request.payment.mobileNumber }})
+                </span>
+                <span class="pm-badge" *ngIf="b.request.payment.paymentMethod !== 'razorpay'">
+                  💳 Card Payment
+                </span>
+              </div>
+
+              <div class="trip-price-dual">
+                <span class="price-inr">₹{{ b.request.grandTotalInr }}</span>
+                <strong class="price-usd">${{ b.request.grandTotal }} USD</strong>
+              </div>
+            </div>
+
+            <div class="trip-footer-actions">
+              <button
+                type="button"
+                class="btn-cancel-trip"
+                [disabled]="isCancellingId === b.bookingId"
+                (click)="onCancelBooking(b.bookingId)"
+                data-action="onCancelBooking(b.bookingId)"
+              >
+                <span *ngIf="isCancellingId !== b.bookingId">Cancel Reservation</span>
+                <span *ngIf="isCancellingId === b.bookingId">Cancelling... ⏳</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <ng-template #noBookings>
+        <div class="empty-trips">
+          <div class="empty-icon">🧳</div>
+          <h3>No bookings found yet</h3>
+          <p>When you book a stay or vacation home, your reservation details and confirmation receipts will appear right here.</p>
+          <button type="button" class="btn-primary" data-action="onExploreStays()" (click)="onExploreStays()">
+            Explore Available Stays
+          </button>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormControl, FormArray, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
@@ -101,34 +101,75 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     { category: 'Value', score: '4.8' },
   ];
 
-  // Concept: RxJS Subject for clean unsubscription
+  // Data Structure: Map associating amenity names to graphical icons
+  amenityIconsMap = new Map<string, string>([
+    ['WiFi', '📶'],
+    ['Pool', '🏊'],
+    ['Spa', '🧖'],
+    ['Breakfast', '🍳'],
+    ['Fireplace', '🔥'],
+    ['Gym', '🏋️'],
+    ['Free Parking', '🚗'],
+    ['Pet Friendly', '🐾'],
+    ['Air Conditioning', '❄️'],
+    ['Hot Tub', '🛁'],
+    ['Kitchen', '🍳'],
+    ['Ocean View', '🌊'],
+    ['Rooftop', '🌆'],
+    ['Ski-in', '⛷️'],
+    ['BBQ', '🍖'],
+  ]);
+
+  // Data Structure: Set storing favorite hotel IDs for O(1) wishlist lookups
+  favoriteHotelIdsSet = new Set<number>();
+
+  // RxJS Subject for clean unsubscription
   private destroy$ = new Subject<void>();
 
-  // Concept: Constructor injecting Router, ActivatedRoute, FormBuilder, HotelService, BookingService, and RazorpayService
+  // Method: Calculate average customer review rating score dynamically using Array.reduce()
+  get averageCustomerRating(): number {
+    // Check if reviews list exists
+    if (!this.reviews || this.reviews.length === 0) {
+      // Return static hotel rating or default
+      return this.hotel?.rating || 4.9;
+    }
+    // Sum review ratings using Array.reduce() with optional chaining
+    const totalScore = this.reviews.reduce((acc, r) => acc + (r?.rating || 0), 0);
+    // Return rounded average to 1 decimal place
+    return Math.round((totalScore / this.reviews.length) * 10) / 10;
+  }
+
+  // Concept: Constructor injecting Router, ActivatedRoute, FormBuilder, HotelService, BookingService, RazorpayService, and ChangeDetectorRef
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private fb: FormBuilder,
     private hotelService: HotelService,
     private bookingService: BookingService,
-    public razorpayService: RazorpayService
+    public razorpayService: RazorpayService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   // LifeCycle Hook: ngOnInit initializes dates, reactive forms, and queries route parameters
   ngOnInit(): void {
-    // Concept: Initialize date restrictions
+    // Initialize default check-in and check-out dates
     this.initDefaultDates();
 
-    // Concept: Build reactive checkout form with FormControls and FormArray
+    // Build reactive checkout form with FormControls and FormArray
     this.buildCheckoutForm();
 
-    // Concept: RxJS Observable listening to route :id parameter changes
+    // Listen to route :id parameter changes
     this.route.paramMap
       .pipe(takeUntil(this.destroy$))
+      // Subscribe to route parameter observable
       .subscribe(params => {
+        // Extract string ID parameter
         const idStr = params.get('id');
+        // Validate ID parameter exists
         if (idStr) {
+          // Parse integer ID
           this.hotelId = parseInt(idStr, 10);
+          // Query hotel details from service
           this.fetchHotelDetails(this.hotelId);
         }
       });
@@ -136,9 +177,11 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // LifeCycle Hook: ngAfterViewInit executes after view rendering
   ngAfterViewInit(): void {
-    // Concept: setTimeout demonstration to scroll to top smoothly
+    // Execute smooth scroll to top with setTimeout
     setTimeout(() => {
+      // Scroll window to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Log render status
       console.debug('[HotelDetailsComponent] View rendered and scrolled to top');
     }, 50);
   }
@@ -202,35 +245,47 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.additionalGuestsFormArray.removeAt(index);
   }
 
-  // Method: RxJS Subscribe pipeline querying hotel details by ID
+  // Method: RxJS Subscribe pipeline querying hotel details by ID with setTimeout async calling
   private fetchHotelDetails(id: number): void {
     this.isLoading = true;
-    this.hotelService
-      .getHotelById(id)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => (this.isLoading = false))
-      )
-      .subscribe({
-        next: (hotel?: Hotel) => {
-          if (hotel) {
-            this.hotel = hotel;
-            this.isFavorite = this.hotelService.isFavorite(hotel.id);
-            this.buildCategorizedAmenities(hotel.amenities);
+    // Concept: setTimeout function in component.ts for asynchronous calling
+    setTimeout(() => {
+      // Concept: Calling HotelService method getHotelById
+      this.hotelService
+        .getHotelById(id)
+        .pipe(
+          takeUntil(this.destroy$),
+          finalize(() => {
+            this.isLoading = false;
+            this.cdr.markForCheck();
+          })
+        )
+        .subscribe({
+          next: (hotel?: Hotel) => {
+            // Concept: if - else condition
+            if (hotel) {
+              this.hotel = hotel;
+              this.isFavorite = this.hotelService.isFavorite(hotel.id);
+              this.buildCategorizedAmenities(hotel.amenities);
+              this.cdr.markForCheck();
 
-            // Concept: Debugging log
-            console.debug(`[HotelDetailsComponent] Loaded details for hotel: ${hotel.name} ($${hotel.price}/night)`);
-          } else {
-            console.warn('[HotelDetailsComponent] Hotel not found for ID:', id);
-          }
-        },
-        error: (err: unknown) => {
-          // Concept: instanceof check for Error handling
-          if (err instanceof Error) {
-            console.error('[HotelDetailsComponent] Error fetching hotel:', err.message);
-          }
-        },
-      });
+              // Concept: Debugging log
+              console.debug(`[HotelDetailsComponent] Loaded details for hotel: ${hotel.name} ($${hotel.price}/night)`);
+            } else {
+              this.hotel = null;
+              console.warn('[HotelDetailsComponent] Hotel not found for ID:', id);
+            }
+          },
+          error: (err: unknown) => {
+            // Concept: if - else condition with instanceof check
+            if (err instanceof Error) {
+              console.error('[HotelDetailsComponent] Error fetching hotel:', err.message);
+            } else {
+              console.error('[HotelDetailsComponent] Unknown error fetching hotel');
+            }
+          },
+        });
+    }, 200);
   }
 
   // Method: Organize raw amenities array into visual categories using Array.filter() and map()
@@ -351,6 +406,25 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  // Method: Toggle and close guests selection dropdown
+  toggleGuestsDropdown(): void {
+    this.isGuestsDropdownOpen = !this.isGuestsDropdownOpen;
+  }
+
+  closeGuestsDropdown(): void {
+    this.isGuestsDropdownOpen = false;
+  }
+
+  // Method: Stop click event propagation to parent elements
+  stopEventPropagation(event: MouseEvent | Event): void {
+    event.stopPropagation();
+  }
+
+  // Method: Dismiss the Razorpay gateway modal
+  closeRazorpayModal(): void {
+    this.isRazorpayModalOpen = false;
+  }
+
   // Method: Toggle wishlist favorite state
   toggleFavorite(): void {
     if (this.hotel?.id) {
@@ -408,8 +482,9 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Method: Proceed to next step in checkout flow
+  // Method: Proceed to next step in checkout flow with if-else condition and setTimeout async calling
   goToCheckoutStep(step: 'review' | 'guest_info' | 'payment'): void {
+    // Concept: if - else condition for step navigation
     if (step === 'guest_info') {
       this.checkoutStep = 'guest_info';
     } else if (step === 'payment') {
@@ -419,11 +494,26 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       primaryControls.forEach(ctrl => {
         const c = this.checkoutForm.get(ctrl);
         c?.markAsTouched();
-        if (c?.invalid) isValid = false;
+        // Concept: if - else condition checking control validity
+        if (c?.invalid) {
+          isValid = false;
+        } else {
+          // valid control
+        }
       });
+
+      // Concept: if - else condition on form validity
       if (isValid) {
-        this.checkoutStep = 'payment';
-        this.mobileNumber = this.checkoutForm.get('phone')?.value || '+91 98765 43210';
+        this.isProcessingPayment = true;
+        // Concept: setTimeout for asynchronous transition
+        setTimeout(() => {
+          this.isProcessingPayment = false;
+          this.checkoutStep = 'payment';
+          this.mobileNumber = this.checkoutForm.get('phone')?.value || '+91 98765 43210';
+          this.cdr.markForCheck();
+        }, 250);
+      } else {
+        console.warn('[HotelDetailsComponent] Primary guest form is invalid');
       }
     } else {
       this.checkoutStep = step;
@@ -462,29 +552,55 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sendRazorpayOtp();
   }
 
-  // Method: Send / Resend Mobile OTP with 30-second countdown timer
+  // Method: Send / Resend Mobile OTP with 30-second countdown timer and setTimeout async calling
   sendRazorpayOtp(): void {
-    this.isOtpSent = false;
-    this.otpError = '';
-    this.otpCountdown = 30;
+    // Concept: if - else condition for phone validation
+    if (this.mobileNumber && this.mobileNumber.trim().length >= 8) {
+      this.isOtpSent = false;
+      this.otpError = '';
+      this.otpCountdown = 30;
 
-    if (this.otpTimerRef) {
-      clearInterval(this.otpTimerRef);
+      if (this.otpTimerRef) {
+        clearInterval(this.otpTimerRef);
+      }
+
+      // Concept: setTimeout for asynchronous calling simulation
+      setTimeout(() => {
+        // Concept: Calling RazorpayService method sendMobileOtp
+        this.razorpayService.sendMobileOtp(this.mobileNumber).subscribe({
+          next: (res) => {
+            // Concept: if - else condition
+            if (res && res.success) {
+              this.isOtpSent = true;
+              this.generatedOtp = res.testOtp;
+
+              // Start countdown timer
+              this.otpTimerRef = setInterval(() => {
+                // Concept: if - else condition
+                if (this.otpCountdown > 0) {
+                  this.otpCountdown--;
+                } else {
+                  clearInterval(this.otpTimerRef);
+                }
+              }, 1000);
+            } else {
+              this.otpError = 'Failed to generate OTP.';
+            }
+            this.cdr.markForCheck();
+          },
+          error: (err: unknown) => {
+            if (err instanceof Error) {
+              this.otpError = err.message;
+            } else {
+              this.otpError = 'Failed to transmit OTP.';
+            }
+            this.cdr.markForCheck();
+          },
+        });
+      }, 250);
+    } else {
+      this.otpError = 'Please provide a valid mobile number.';
     }
-
-    this.razorpayService.sendMobileOtp(this.mobileNumber).subscribe(res => {
-      this.isOtpSent = true;
-      this.generatedOtp = res.testOtp;
-
-      // Start countdown
-      this.otpTimerRef = setInterval(() => {
-        if (this.otpCountdown > 0) {
-          this.otpCountdown--;
-        } else {
-          clearInterval(this.otpTimerRef);
-        }
-      }, 1000);
-    });
   }
 
   // Method: Auto-fill test OTP (123456) for instant user convenience
@@ -493,115 +609,171 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.otpError = '';
   }
 
-  // Method: Verify Razorpay Mobile OTP and finalize booking
+  // Method: Verify Razorpay Mobile OTP and finalize booking with if-else conditions and setTimeout async calling
   verifyRazorpayOtpAndPay(): void {
-    if (!this.mobileOtp || this.mobileOtp.trim().length !== 6) {
+    // Concept: if - else condition checking 6-digit OTP
+    if (this.mobileOtp && this.mobileOtp.trim().length === 6) {
+      this.isVerifyingOtp = true;
+      this.otpError = '';
+
+      // Concept: setTimeout for asynchronous bank verification simulation
+      setTimeout(() => {
+        try {
+          // Concept: Calling RazorpayService method verifyOtpAndPay
+          this.razorpayService.verifyOtpAndPay(this.razorpayOrderId, this.mobileOtp, this.generatedOtp).subscribe({
+            next: (res) => {
+              // Concept: if - else condition
+              if (res && res.success) {
+                this.isVerifyingOtp = false;
+                this.razorpayPaymentId = res.paymentId;
+                this.isRazorpayModalOpen = false;
+                // Finalize booking via service
+                this.finalizeBookingWithPayment('razorpay', res.paymentId, this.razorpayOrderId);
+              } else {
+                this.isVerifyingOtp = false;
+                this.otpError = 'Payment authorization could not be verified.';
+              }
+              this.cdr.markForCheck();
+            },
+            error: (err: unknown) => {
+              this.isVerifyingOtp = false;
+              if (err instanceof Error) {
+                this.otpError = err.message;
+              } else {
+                this.otpError = 'Payment authorization failed.';
+              }
+              this.cdr.markForCheck();
+            },
+          });
+        } catch (e: unknown) {
+          this.isVerifyingOtp = false;
+          if (e instanceof Error) {
+            this.otpError = e.message;
+          } else {
+            this.otpError = 'Unexpected payment exception.';
+          }
+          this.cdr.markForCheck();
+        }
+      }, 400);
+    } else {
       this.otpError = 'Please enter the 6-digit OTP code (or click "Auto-fill 123456").';
-      return;
-    }
-
-    this.isVerifyingOtp = true;
-    this.otpError = '';
-
-    try {
-      this.razorpayService.verifyOtpAndPay(this.razorpayOrderId, this.mobileOtp, this.generatedOtp).subscribe({
-        next: (res) => {
-          this.isVerifyingOtp = false;
-          this.razorpayPaymentId = res.paymentId;
-          this.isRazorpayModalOpen = false;
-          // Finalize booking
-          this.finalizeBookingWithPayment('razorpay', res.paymentId, this.razorpayOrderId);
-        },
-        error: (err: unknown) => {
-          this.isVerifyingOtp = false;
-          if (err instanceof Error) {
-            this.otpError = err.message;
-          }
-        },
-      });
-    } catch (e: unknown) {
-      this.isVerifyingOtp = false;
-      if (e instanceof Error) {
-        this.otpError = e.message;
-      }
     }
   }
 
-  // Method: Submit direct credit card / alternate payment without Razorpay popup
+  // Method: Submit direct credit card / alternate payment with if-else condition and setTimeout async calling
   submitDirectPayment(): void {
-    const paymentMethod = this.checkoutForm.get('paymentMethod')?.value;
-    if (paymentMethod === 'razorpay') {
-      this.openRazorpayGateway();
-      return;
-    }
+    // Concept: if - else condition validating Reactive Form
+    if (this.checkoutForm.valid) {
+      const paymentMethod = this.checkoutForm.get('paymentMethod')?.value;
 
-    this.isProcessingPayment = true;
-    const paymentId = `pay_card_${Math.random().toString(36).substring(2, 10)}`;
-    this.finalizeBookingWithPayment(paymentMethod, paymentId);
+      // Concept: if - else condition branching payment methods
+      if (paymentMethod === 'razorpay') {
+        this.openRazorpayGateway();
+      } else if (paymentMethod === 'credit_card') {
+        this.isProcessingPayment = true;
+        // Concept: setTimeout for asynchronous card gateway processing
+        setTimeout(() => {
+          const paymentId = `pay_card_${Math.random().toString(36).substring(2, 10)}`;
+          this.finalizeBookingWithPayment('credit_card', paymentId);
+        }, 600);
+      } else {
+        this.isProcessingPayment = true;
+        // Concept: setTimeout for alternate payment
+        setTimeout(() => {
+          const paymentId = `pay_alt_${Math.random().toString(36).substring(2, 10)}`;
+          this.finalizeBookingWithPayment(paymentMethod || 'paypal', paymentId);
+        }, 500);
+      }
+    } else {
+      this.checkoutForm.markAllAsTouched();
+      console.warn('[HotelDetailsComponent] Checkout form has validation errors');
+    }
   }
 
-  // Method: Create final confirmed booking object in BookingService
+  // Method: Create final confirmed booking object in BookingService with if-else and setTimeout async calling
   private finalizeBookingWithPayment(method: any, paymentId: string, orderId?: string): void {
-    if (!this.hotel) return;
-    const formVal = this.checkoutForm.value;
+    // Concept: if - else condition checking hotel existence
+    if (this.hotel) {
+      const formVal = this.checkoutForm.value;
 
-    const request: BookingRequest = {
-      hotelId: this.hotel.id,
-      hotelName: this.hotel.name,
-      hotelLocation: this.hotel.location,
-      hotelImage: this.hotel.imageUrl,
-      checkIn: this.checkInDate,
-      checkOut: this.checkOutDate,
-      nights: this.calculatedNights,
-      guestsCount: this.totalGuestsCount,
-      adultsCount: this.adultsCount,
-      childrenCount: this.childrenCount,
-      pricePerNight: this.hotel.price,
-      baseTotal: this.basePriceTotal,
-      cleaningFee: this.cleaningFeeTotal,
-      serviceFee: this.serviceFeeTotal,
-      discountAmount: this.discountTotal,
-      grandTotal: this.grandTotal,
-      grandTotalInr: this.grandTotalInr,
-      primaryGuest: {
-        firstName: formVal.firstName,
-        lastName: formVal.lastName,
-        email: formVal.email,
-        phone: formVal.phone,
-        isPrimary: true,
-      },
-      specialRequests: formVal.specialRequests,
-      payment: {
-        paymentMethod: method,
-        cardNumber: formVal.cardNumber,
-        cardHolder: formVal.cardHolder,
-        expiryDate: formVal.expiryDate,
-        cvv: formVal.cvv,
-        mobileNumber: this.mobileNumber,
-        razorpayPaymentId: paymentId,
-        razorpayOrderId: orderId,
-        otpVerified: true,
-      },
-    };
+      const request: BookingRequest = {
+        hotelId: this.hotel.id,
+        hotelName: this.hotel.name,
+        hotelLocation: this.hotel.location,
+        hotelImage: this.hotel.imageUrl,
+        checkIn: this.checkInDate,
+        checkOut: this.checkOutDate,
+        nights: this.calculatedNights,
+        guestsCount: this.totalGuestsCount,
+        adultsCount: this.adultsCount,
+        childrenCount: this.childrenCount,
+        pricePerNight: this.hotel.price,
+        baseTotal: this.basePriceTotal,
+        cleaningFee: this.cleaningFeeTotal,
+        serviceFee: this.serviceFeeTotal,
+        discountAmount: this.discountTotal,
+        grandTotal: this.grandTotal,
+        grandTotalInr: this.grandTotalInr,
+        primaryGuest: {
+          firstName: formVal.firstName,
+          lastName: formVal.lastName,
+          email: formVal.email,
+          phone: formVal.phone,
+          isPrimary: true,
+        },
+        specialRequests: formVal.specialRequests,
+        payment: {
+          paymentMethod: method,
+          cardNumber: formVal.cardNumber,
+          cardHolder: formVal.cardHolder,
+          expiryDate: formVal.expiryDate,
+          cvv: formVal.cvv,
+          mobileNumber: this.mobileNumber,
+          razorpayPaymentId: paymentId,
+          razorpayOrderId: orderId,
+          otpVerified: true,
+        },
+      };
 
-    this.bookingService
-      .createBooking(request)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => (this.isProcessingPayment = false))
-      )
-      .subscribe({
-        next: (confirmation: BookingConfirmation) => {
-          this.confirmedBooking = confirmation;
-          this.checkoutStep = 'confirmed';
-          console.debug('[HotelDetailsComponent] Booking confirmed via Razorpay/Payment:', confirmation.bookingId);
-        },
-        error: (err: unknown) => {
-          if (err instanceof Error) {
-            console.error('[HotelDetailsComponent] Booking confirmation failed:', err.message);
-          }
-        },
-      });
+      this.isProcessingPayment = true;
+
+      // Concept: setTimeout function in component.ts for asynchronous calling simulation
+      setTimeout(() => {
+        // Concept: Calling BookingService method createBooking
+        this.bookingService
+          .createBooking(request)
+          .pipe(
+            takeUntil(this.destroy$),
+            finalize(() => {
+              this.isProcessingPayment = false;
+              this.cdr.markForCheck();
+            })
+          )
+          .subscribe({
+            next: (confirmation: BookingConfirmation) => {
+              // Concept: if - else condition
+              if (confirmation && confirmation.bookingId) {
+                this.confirmedBooking = confirmation;
+                this.checkoutStep = 'confirmed';
+                console.debug('[HotelDetailsComponent] Booking confirmed via BookingService:', confirmation.bookingId);
+              } else {
+                console.warn('[HotelDetailsComponent] Empty booking confirmation response');
+              }
+              this.cdr.markForCheck();
+            },
+            error: (err: unknown) => {
+              if (err instanceof Error) {
+                console.error('[HotelDetailsComponent] Booking confirmation failed:', err.message);
+              } else {
+                console.error('[HotelDetailsComponent] Unknown booking error');
+              }
+            },
+          });
+      }, 400);
+    } else {
+      console.error('[HotelDetailsComponent] Cannot book without an active hotel selection.');
+      return;
+    }
   }
 
   // Method: Navigate back to listings explore page

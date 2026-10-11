@@ -1,0 +1,334 @@
+.trips-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  animation: fadeInBackdrop 0.2s ease;
+}
+
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.trips-modal-dialog {
+  position: relative;
+  background: var(--color-white);
+  border-radius: var(--border-radius-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  max-width: 680px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+  border: 1px solid var(--color-gray-200);
+  animation: modalPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.95) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--border-radius-full);
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.modal-close-btn:hover {
+  background: var(--color-gray-200);
+  color: var(--color-dark);
+}
+
+.trips-header {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-title-row h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.trips-count-badge {
+  background: rgba(255, 56, 92, 0.1);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: var(--border-radius-full);
+}
+
+.header-desc {
+  font-size: 0.88rem;
+  color: var(--color-gray);
+  margin-top: 4px;
+}
+
+.trips-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.trip-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.trip-card:hover {
+  border-color: var(--color-gray-300);
+  box-shadow: var(--shadow-md);
+}
+
+.trip-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-gray-100);
+  margin-bottom: var(--spacing-sm);
+}
+
+.trip-ref {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ref-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-gray);
+  letter-spacing: 0.5px;
+}
+
+.ref-id {
+  font-size: 13px;
+  font-family: monospace;
+  color: var(--color-dark);
+  background: var(--color-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.status-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--border-radius-full);
+}
+
+.status-pill--confirmed {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.property-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.property-location {
+  font-size: 0.85rem;
+  color: var(--color-gray);
+  margin-top: 2px;
+}
+
+.trip-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  background: var(--color-bg);
+  padding: 10px;
+  border-radius: var(--border-radius-md);
+  margin: var(--spacing-sm) 0;
+}
+
+.meta-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-gray);
+  text-transform: uppercase;
+}
+
+.meta-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+/* Formal Reservation Receipt Table */
+.trip-table-wrap {
+  margin: var(--spacing-xs) 0 var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-white);
+}
+
+.trip-receipt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.trip-receipt-table th {
+  background: var(--color-gray-100);
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-gray-600);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.trip-receipt-table td {
+  padding: 5px 8px;
+  color: var(--color-gray-800);
+  font-weight: 500;
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.trip-payment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--spacing-xs);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.payment-method-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pm-label {
+  font-size: 11px;
+  color: var(--color-gray);
+}
+
+.pm-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-dark);
+  background: var(--color-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.trip-price-dual {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.price-inr {
+  font-size: 13px;
+  color: var(--color-gray);
+}
+
+.price-usd {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.trip-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-gray-200);
+}
+
+.btn-cancel-trip {
+  background: transparent;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 6px 14px;
+  border-radius: var(--border-radius-full);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-cancel-trip:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.btn-cancel-trip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Empty State */
+.empty-trips {
+  text-align: center;
+  padding: var(--spacing-2xl) var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.empty-icon {
+  font-size: 48px;
+}
+
+.empty-trips h3 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.empty-trips p {
+  font-size: 0.9rem;
+  color: var(--color-gray);
+  max-width: 400px;
+  margin-bottom: var(--spacing-sm);
+}
+
+@media (max-width: 600px) {
+  .trip-meta-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -86,4 +86,22 @@ export class BookingService {
     const found = this.bookingsSubject.getValue().find(b => b.bookingId === bookingId);
     return of(found).pipe(delay(200));
   }
+
+  // Method: Cancel an existing booking by reference ID
+  cancelBooking(bookingId: string): Observable<boolean> {
+    const current = this.bookingsSubject.getValue();
+    const updated = current.filter(b => b.bookingId !== bookingId);
+    const wasRemoved = updated.length < current.length;
+
+    if (wasRemoved) {
+      this.bookingsSubject.next(updated);
+      this.saveToStorage(updated);
+      console.debug(`[BookingService] Successfully cancelled booking: ${bookingId}`);
+    } else {
+      console.warn(`[BookingService] Booking ${bookingId} not found for cancellation`);
+    }
+
+    return of(wasRemoved).pipe(delay(300));
+  }
 }
+

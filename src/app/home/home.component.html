@@ -6,9 +6,9 @@
     <p class="hero__subtitle">Discover hotels, resorts & unique stays worldwide</p>
 
     <!-- Interactive Search Bar -->
-    <form class="search-bar" [formGroup]="searchForm" (ngSubmit)="onSearch()">
+    <form class="search-bar" [formGroup]="searchForm" (ngSubmit)="onSearch()" data-action="onSearch()">
       <!-- WHERE Field -->
-      <div class="search-bar__field search-bar__field--location" (click)="openLocationDropdown()">
+      <div class="search-bar__field search-bar__field--location" (click)="openLocationDropdown()" data-action="openLocationDropdown()">
         <label>Where</label>
         <input
           type="text"
@@ -19,7 +19,7 @@
         />
 
         <!-- Location Suggestions Dropdown -->
-        <div class="location-dropdown" *ngIf="showLocationDropdown" (click)="$event.stopPropagation()">
+        <div class="location-dropdown" *ngIf="showLocationDropdown" (click)="stopEventPropagation($event)" data-action="stopEventPropagation($event)">
           <div class="dropdown-header">Popular Destinations</div>
           <div class="dropdown-list">
             <button
@@ -27,6 +27,7 @@
               *ngFor="let item of filteredSuggestions"
               class="dropdown-item"
               (click)="selectLocation(item)"
+              data-action="selectLocation(item)"
             >
               <span class="dropdown-item__icon">{{ item.icon }}</span>
               <div class="dropdown-item__info">
@@ -68,14 +69,14 @@
       <div class="search-bar__divider"></div>
 
       <!-- GUESTS Field -->
-      <div class="search-bar__field search-bar__field--guests" (click)="openGuestDropdown()">
+      <div class="search-bar__field search-bar__field--guests" (click)="openGuestDropdown()" data-action="openGuestDropdown()">
         <label>Guests</label>
         <div class="guests-display">
           <span>{{ totalGuestLabel }}</span>
         </div>
 
         <!-- Guests Stepper Dropdown -->
-        <div class="guests-dropdown" *ngIf="showGuestDropdown" (click)="$event.stopPropagation()">
+        <div class="guests-dropdown" *ngIf="showGuestDropdown" (click)="stopEventPropagation($event)" data-action="stopEventPropagation($event)">
           <!-- Adults -->
           <div class="guest-row">
             <div class="guest-info">
@@ -88,6 +89,7 @@
                 class="stepper-btn"
                 [disabled]="adultsCount <= 1"
                 (click)="updateGuests('adults', -1)"
+                data-action="updateGuests('adults', -1)"
               >−</button>
               <span class="stepper-count">{{ adultsCount }}</span>
               <button
@@ -95,6 +97,7 @@
                 class="stepper-btn"
                 [disabled]="adultsCount >= 16"
                 (click)="updateGuests('adults', 1)"
+                data-action="updateGuests('adults', 1)"
               >+</button>
             </div>
           </div>
@@ -111,6 +114,7 @@
                 class="stepper-btn"
                 [disabled]="childrenCount <= 0"
                 (click)="updateGuests('children', -1)"
+                data-action="updateGuests('children', -1)"
               >−</button>
               <span class="stepper-count">{{ childrenCount }}</span>
               <button
@@ -118,12 +122,13 @@
                 class="stepper-btn"
                 [disabled]="childrenCount >= 10"
                 (click)="updateGuests('children', 1)"
+                data-action="updateGuests('children', 1)"
               >+</button>
             </div>
           </div>
 
           <div class="guests-dropdown__footer">
-            <button type="button" class="guest-apply-btn" (click)="showGuestDropdown = false">
+            <button type="button" class="guest-apply-btn" data-action="closeGuestDropdown()" (click)="closeGuestDropdown()">
               Done
             </button>
           </div>
@@ -131,7 +136,7 @@
       </div>
 
       <!-- Search CTA Button -->
-      <button type="submit" class="search-bar__btn">
+      <button type="submit" class="search-bar__btn" data-action="onSearch()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
           <circle cx="11" cy="11" r="6"/><path d="M21 21l-4.35-4.35"/>
         </svg>
@@ -150,6 +155,7 @@
         class="category-pill"
         [class.category-pill--active]="activeCategory === cat.value"
         (click)="selectCategory(cat.value)"
+        data-action="selectCategory(cat.value)"
         type="button"
       >
         <span class="category-pill__icon">{{ cat.icon }}</span>
@@ -171,6 +177,7 @@
       class="hotel-card"
       *ngFor="let hotel of filteredHotels; trackBy: trackByHotel"
       (click)="navigateToListing(hotel.id)"
+      data-action="navigateToListing(hotel.id)"
     >
       <div class="hotel-card__img-wrap">
         <img [src]="hotel.imageUrl" [alt]="hotel.name" loading="lazy" />
@@ -194,7 +201,7 @@
             <span class="price__amount">${{ hotel.price }}</span>
             <span class="price__unit"> / night</span>
           </div>
-          <button class="btn-primary btn--sm" (click)="$event.stopPropagation(); navigateToListing(hotel.id)">
+          <button class="btn-primary btn--sm" data-action="onBookNowClick(hotel.id, $event)" (click)="onBookNowClick(hotel.id, $event)">
             Book Now
           </button>
         </div>
@@ -215,6 +222,7 @@
       class="hotel-card"
       *ngFor="let hotel of featuredHotels; trackBy: trackByHotel"
       (click)="navigateToListing(hotel.id)"
+      data-action="navigateToListing(hotel.id)"
     >
       <div class="hotel-card__img-wrap">
         <img [src]="hotel.imageUrl" [alt]="hotel.name" loading="lazy" />
@@ -238,12 +246,59 @@
             <span class="price__amount">${{ hotel.price }}</span>
             <span class="price__unit"> / night</span>
           </div>
-          <button class="btn-primary btn--sm" (click)="$event.stopPropagation(); navigateToListing(hotel.id)">
+          <button class="btn-primary btn--sm" data-action="onBookNowClick(hotel.id, $event)" (click)="onBookNowClick(hotel.id, $event)">
             Book Now
           </button>
         </div>
       </div>
     </article>
+  </div>
+</section>
+
+<!-- ===== ADVANTAGE COMPARISON TABLE ===== -->
+<section class="section container">
+  <div class="section__header">
+    <h2>Why Book With StayEase?</h2>
+    <p>Transparent rates, verified hosts, and 24/7 guest support guaranteed.</p>
+  </div>
+
+  <div class="advantage-table-wrap">
+    <table class="advantage-table" aria-label="StayEase Advantage Comparison">
+      <thead>
+        <tr>
+          <th>Booking Advantage</th>
+          <th>StayEase Verified</th>
+          <th>Standard OTAs</th>
+          <th>Traveler Benefit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Cancellation Policy</td>
+          <td>Free up to 48 hours</td>
+          <td>Non-refundable / Fees</td>
+          <td>Full flexibility to change plans</td>
+        </tr>
+        <tr>
+          <td>Guest Reviews</td>
+          <td>100% Verified Guests</td>
+          <td>Unverified submissions</td>
+          <td>Honest real traveler insights</td>
+        </tr>
+        <tr>
+          <td>Host Communication</td>
+          <td>Direct In-App Messaging</td>
+          <td>Third-party call centers</td>
+          <td>Instant local recommendations</td>
+        </tr>
+        <tr>
+          <td>Price Transparency</td>
+          <td>Zero Hidden Resort Fees</td>
+          <td>Surprise checkout surcharges</td>
+          <td>Pay exactly what you see</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </section>
 
@@ -260,6 +315,7 @@
         class="destination-card"
         *ngFor="let dest of destinations; trackBy: trackByDest"
         (click)="navigateToDestination(dest.city)"
+        data-action="navigateToDestination(dest.city)"
       >
         <img [src]="dest.imageUrl" [alt]="dest.city" loading="lazy" />
         <div class="destination-card__overlay">

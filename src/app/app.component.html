@@ -1,5 +1,6 @@
 <header class="navbar">
   <div class="container navbar__inner">
+    <!-- Brand Logo -->
     <a routerLink="/" class="navbar__logo" (click)="closeMobileMenu()">
       <svg width="28" height="30" viewBox="0 0 30 32" fill="var(--color-primary)" xmlns="http://www.w3.org/2000/svg">
         <path d="M15 0C9.5 0 5 5.2 5 11.6c0 7.8 10 20.4 10 20.4s10-12.6 10-20.4C25 5.2 20.5 0 15 0zm0 16a4.4 4.4 0 110-8.8A4.4 4.4 0 0115 16z"/>
@@ -16,9 +17,166 @@
     <!-- Desktop Actions -->
     <div class="navbar__actions">
       <a routerLink="/listings" class="btn-outline host-cta-btn">Become a Host</a>
-      <button class="navbar__avatar" aria-label="User menu">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-      </button>
+
+      <!-- User Avatar / Menu Pill Trigger -->
+      <div class="user-menu-wrapper">
+        <button
+          type="button"
+          class="navbar__avatar"
+          [class.navbar__avatar--logged-in]="isLoggedIn$ | async"
+          data-action="toggleUserMenu($event)"
+          (click)="toggleUserMenu($event)"
+          aria-label="User menu"
+        >
+          <!-- Hamburger lines icon inside pill -->
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+
+          <!-- User Image or Default Icon -->
+          <ng-container *ngIf="(currentUser$ | async) as user; else defaultAvatar">
+            <img [src]="user.avatar" [alt]="user.name" class="avatar-photo" />
+            <span class="avatar-status-dot"></span>
+          </ng-container>
+          <ng-template #defaultAvatar>
+            <div class="default-avatar-circle">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+              </svg>
+            </div>
+          </ng-template>
+        </button>
+
+        <!-- Profile Dropdown Menu (Airbnb Style) -->
+        <div class="user-dropdown-menu" *ngIf="isUserMenuOpen" (click)="onUserMenuClick($event)">
+          <!-- 1. LOGGED IN STATE -->
+          <ng-container *ngIf="(currentUser$ | async) as user">
+            <!-- User Header Card -->
+            <div class="dropdown-user-header">
+              <img [src]="user.avatar" [alt]="user.name" class="dropdown-user-avatar" />
+              <div class="dropdown-user-details">
+                <strong class="dropdown-user-name">{{ user.name }}</strong>
+                <span class="dropdown-user-email">{{ user.email }}</span>
+                <span class="dropdown-role-badge" [class.dropdown-role-badge--host]="user.role === 'host'">
+                  {{ user.role === 'host' ? '⭐ Superhost' : '✈️ Traveler' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <button
+              type="button"
+              class="dropdown-item dropdown-item--bold"
+              data-action="openTripsModal()"
+              (click)="openTripsModal()"
+            >
+              <span class="dropdown-item-icon">🧳</span>
+              <span>My Trips & Bookings</span>
+              <span class="dropdown-badge" *ngIf="(bookings$ | async)?.length as count">
+                {{ count }}
+              </span>
+            </button>
+
+            <a routerLink="/listings" class="dropdown-item" data-action="closeUserMenu()" (click)="closeUserMenu()">
+              <span class="dropdown-item-icon">❤️</span>
+              <span>Wishlist ({{ user.savedHotels ? user.savedHotels.length : 0 }})</span>
+            </a>
+
+            <a routerLink="/listings" class="dropdown-item" data-action="closeUserMenu()" (click)="closeUserMenu()">
+              <span class="dropdown-item-icon">🏡</span>
+              <span>Host your property</span>
+            </a>
+
+            <div class="dropdown-divider"></div>
+
+            <button
+              type="button"
+              class="dropdown-item dropdown-item--logout"
+              data-action="onLogout()"
+              (click)="onLogout()"
+            >
+              <span class="dropdown-item-icon">🚪</span>
+              <span>Log out</span>
+            </button>
+          </ng-container>
+
+          <!-- 2. LOGGED OUT STATE -->
+          <ng-container *ngIf="!(isLoggedIn$ | async)">
+            <button
+              type="button"
+              class="dropdown-item dropdown-item--bold"
+              data-action="openAuthModal('signup')"
+              (click)="openAuthModal('signup')"
+            >
+              <span class="dropdown-item-icon">✨</span>
+              <span>Sign up</span>
+            </button>
+
+            <button
+              type="button"
+              class="dropdown-item"
+              data-action="openAuthModal('login')"
+              (click)="openAuthModal('login')"
+            >
+              <span class="dropdown-item-icon">🔑</span>
+              <span>Log in</span>
+            </button>
+
+            <div class="dropdown-divider"></div>
+
+            <!-- Quick Demo Accounts -->
+            <div class="dropdown-demo-section">
+              <span class="dropdown-demo-title">⚡ QUICK 1-CLICK DEMO LOGIN</span>
+              <div class="dropdown-demo-btns">
+                <button
+                  type="button"
+                  class="demo-pill-btn"
+                  data-action="onDemoLogin('guest')"
+                  (click)="onDemoLogin('guest')"
+                >
+                  Traveler (Alex)
+                </button>
+                <button
+                  type="button"
+                  class="demo-pill-btn demo-pill-btn--host"
+                  data-action="onDemoLogin('host')"
+                  (click)="onDemoLogin('host')"
+                >
+                  Host (Sarah) ⭐
+                </button>
+                <button
+                  type="button"
+                  class="demo-pill-btn demo-pill-btn--vip"
+                  data-action="onDemoLogin('vip')"
+                  (click)="onDemoLogin('vip')"
+                >
+                  VIP (David) 💎
+                </button>
+              </div>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <a routerLink="/listings" class="dropdown-item" data-action="closeUserMenu()" (click)="closeUserMenu()">
+              <span class="dropdown-item-icon">🏡</span>
+              <span>Become a Host</span>
+            </a>
+
+            <button
+              type="button"
+              class="dropdown-item"
+              data-action="openTripsModal()"
+              (click)="openTripsModal()"
+            >
+              <span class="dropdown-item-icon">🧳</span>
+              <span>Look up a booking</span>
+            </button>
+          </ng-container>
+        </div>
+      </div>
 
       <!-- Mobile Hamburger Toggle -->
       <button
@@ -44,6 +202,25 @@
   <!-- Mobile Dropdown Navigation Menu -->
   <div class="navbar__mobile-menu" [class.navbar__mobile-menu--open]="isMobileMenuOpen">
     <div class="container mobile-menu__inner">
+      <!-- Mobile Logged In User Preview -->
+      <div class="mobile-user-card" *ngIf="(currentUser$ | async) as user">
+        <img [src]="user.avatar" [alt]="user.name" class="mobile-avatar" />
+        <div class="mobile-user-text">
+          <strong>{{ user.name }}</strong>
+          <span>{{ user.email }}</span>
+        </div>
+      </div>
+
+      <!-- Mobile Auth Action Buttons (if logged out) -->
+      <div class="mobile-auth-actions" *ngIf="!(isLoggedIn$ | async)">
+        <button type="button" class="btn-primary mobile-auth-btn" (click)="openAuthModal('login')">
+          Log In
+        </button>
+        <button type="button" class="btn-outline mobile-auth-btn" (click)="openAuthModal('signup')">
+          Sign Up
+        </button>
+      </div>
+
       <nav class="mobile-nav-links">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" (click)="closeMobileMenu()">
           <span class="mobile-nav-icon">🏠</span>
@@ -53,10 +230,19 @@
           <span class="mobile-nav-icon">🔍</span>
           <span>Explore Stays</span>
         </a>
+        <button type="button" class="mobile-nav-btn" (click)="openTripsModal()">
+          <span class="mobile-nav-icon">🧳</span>
+          <span>My Trips & Bookings</span>
+          <span class="mobile-badge" *ngIf="(bookings$ | async)?.length as count">{{ count }}</span>
+        </button>
         <a routerLink="/listings" class="mobile-host-link" (click)="closeMobileMenu()">
           <span class="mobile-nav-icon">✨</span>
           <span>Become a Host</span>
         </a>
+        <button type="button" class="mobile-nav-btn mobile-nav-btn--logout" *ngIf="isLoggedIn$ | async" (click)="onLogout(); closeMobileMenu()">
+          <span class="mobile-nav-icon">🚪</span>
+          <span>Log out</span>
+        </button>
       </nav>
     </div>
   </div>
@@ -67,6 +253,35 @@
 </main>
 
 <footer class="footer">
+  <div class="container footer__telemetry">
+    <table class="session-stats-table" aria-label="Session Navigation Overview">
+      <thead>
+        <tr>
+          <th>Session Metric</th>
+          <th>Active Value</th>
+          <th>Telemetry Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Active Route</td>
+          <td><code>{{ (routeTracker.currentUrl$ | async) || '/' }}</code></td>
+          <td>Real-Time Tracking Active</td>
+        </tr>
+        <tr>
+          <td>Member Status</td>
+          <td>{{ (isLoggedIn$ | async) ? 'Authenticated Member' : 'Guest Visitor' }}</td>
+          <td>{{ (currentUser$ | async)?.name || 'Demo Access Ready' }}</td>
+        </tr>
+        <tr>
+          <td>Reserved Stays</td>
+          <td>{{ (bookings$ | async)?.length || 0 }} Stays</td>
+          <td>Instant Confirmation Protected</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
   <div class="container footer__inner">
     <div class="footer__copy">
       <span>© 2024 StayEase, Inc. All rights reserved.</span>
@@ -79,3 +294,16 @@
     </nav>
   </div>
 </footer>
+
+<!-- Authentication Modal -->
+<app-auth-modal
+  [isOpen]="isAuthModalOpen"
+  [initialTab]="authModalTab"
+  (close)="closeAuthModal()"
+></app-auth-modal>
+
+<!-- User Trips / Bookings Modal -->
+<app-user-trips-modal
+  [isOpen]="isTripsModalOpen"
+  (close)="closeTripsModal()"
+></app-user-trips-modal>

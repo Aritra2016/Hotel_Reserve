@@ -677,4 +677,41 @@
   }
 }
 
+/* ===== ADVANTAGE COMPARISON TABLE ===== */
+.advantage-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-white);
+  margin-top: var(--spacing-md);
+}
+
+.advantage-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 580px;
+}
+
+.advantage-table th {
+  background: var(--color-gray-100);
+  padding: 12px 18px;
+  font-weight: 700;
+  color: var(--color-gray-800);
+  font-size: var(--font-size-sm);
+  border-bottom: 2px solid var(--color-gray-200);
+}
+
+.advantage-table td {
+  padding: 12px 18px;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+  border-bottom: 1px solid var(--color-gray-100);
+}
+
+.advantage-table tr:hover td {
+  background: #fdf2f4;
+}
+
+
 
