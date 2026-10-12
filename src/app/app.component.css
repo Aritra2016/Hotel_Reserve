@@ -436,43 +436,300 @@
   overflow-x: clip;
 }
 
-/* Footer */
+/* ==========================================================
+   Airbnb-Style Comprehensive Footer
+   ========================================================== */
 .footer {
-  border-top: 1px solid var(--color-gray-light);
-  background: var(--color-white);
-  min-height: 60px;
-  padding: var(--spacing-md) 0;
+  border-top: 1px solid #e2e8f0;
+  background: #f7f7f7;
+  padding: 48px 0 24px 0;
   width: 100%;
+  color: #222222;
 }
 
-.footer__inner {
+/* 1. Inspiration for future getaways */
+.footer__inspiration {
+  margin-bottom: 8px;
+}
+
+.inspiration__title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #222222;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.01em;
+}
+
+.inspiration__tabs {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-  font-size: var(--font-size-sm);
-  color: var(--color-gray);
-  flex-wrap: wrap;
+  gap: 24px;
+  border-bottom: 1px solid #dddddd;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin-bottom: 24px;
 }
 
-.footer__copy {
+.inspiration__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.inspiration__tab-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #717171;
+  padding: 10px 0 14px 0;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s ease;
+}
+
+.inspiration__tab-btn:hover {
+  color: #222222;
+}
+
+.inspiration__tab-btn.active {
+  color: #222222;
+}
+
+.inspiration__tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #222222;
+}
+
+.inspiration__grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px 20px;
+}
+
+.getaway-item {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
-.footer__links {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  flex-wrap: wrap;
+.getaway-item__city {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222222;
+  line-height: 1.25;
 }
 
-.footer__links a:hover {
-  color: var(--color-dark);
+.getaway-item__subtitle {
+  font-size: 13px;
+  color: #717171;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.getaway-item:hover .getaway-item__city {
   text-decoration: underline;
 }
 
+.getaway-item--showmore {
+  justify-content: flex-start;
+}
+
+.getaway-item__toggle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #222222;
+  text-decoration: underline;
+  cursor: pointer;
+  padding-top: 2px;
+}
+
+.footer__divider {
+  width: 100%;
+  height: 1px;
+  background: #dddddd;
+  margin: 32px 0;
+}
+
+/* 2. Middle Section Columns: Support, Hosting, StayEase */
+.footer__columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+}
+
+.footer__col-heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: #222222;
+  margin: 0 0 16px 0;
+}
+
+.footer__col-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer__col-list li a {
+  font-size: 14px;
+  color: #222222;
+  text-decoration: none;
+  transition: text-decoration 0.15s;
+}
+
+.footer__col-list li a:hover {
+  text-decoration: underline;
+}
+
+.footer__api-link {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700 !important;
+  color: #ff385c !important;
+}
+
+/* 3. Session Navigation Telemetry Table */
+.footer__telemetry {
+  margin: 4px 0;
+}
+
+.session-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.session-stats-table th {
+  background: #f1f5f9;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.session-stats-table td {
+  font-size: 0.825rem;
+  color: #334155;
+  padding: 10px 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.footer__specs-link {
+  color: #ff385c;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* 4. Bottom Legal and Preferences Bar */
+.footer__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 14px;
+  color: #222222;
+  padding-top: 4px;
+}
+
+.footer__legal {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.footer__copyright {
+  color: #222222;
+}
+
+.footer__legal a {
+  color: #222222;
+  text-decoration: none;
+}
+
+.footer__legal a:hover {
+  text-decoration: underline;
+}
+
+.footer__dot {
+  color: #717171;
+}
+
+.footer__preferences {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.pref-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #222222;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.pref-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  text-decoration: underline;
+}
+
+.pref-icon {
+  font-size: 15px;
+}
+
+.footer__socials {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: 6px;
+}
+
+.footer__socials a {
+  color: #222222;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.15s;
+}
+
+.footer__socials a:hover {
+  opacity: 0.7;
+}
+
 /* Responsive Media Queries */
+@media (max-width: 1100px) {
+  .inspiration__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .navbar__links {
     display: none;
@@ -490,14 +747,19 @@
     font-size: var(--font-size-lg);
   }
 
-  .footer__inner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
+  .inspiration__grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 
-  .footer__links {
-    gap: var(--spacing-md);
+  .footer__columns {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .footer__bottom {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: 16px;
   }
 }
 
@@ -510,35 +772,10 @@
     width: 250px;
     right: -10px;
   }
+
+  .inspiration__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.footer__telemetry {
-  padding-bottom: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--color-gray-200);
-}
-
-.session-stats-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--color-white);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.session-stats-table th {
-  background: var(--color-gray-100);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--color-gray-600);
-  padding: 8px 12px;
-}
-
-.session-stats-table td {
-  font-size: 0.8rem;
-  color: var(--color-gray-700);
-  padding: 8px 12px;
-}
 

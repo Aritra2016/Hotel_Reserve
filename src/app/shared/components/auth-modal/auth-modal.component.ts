@@ -9,10 +9,12 @@ import {
   Output,
   SimpleChanges,
   ChangeDetectorRef,
+  Optional,
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/user.model';
+import { AppComponent } from '../../../app.component';
 
 @Component({
   selector: 'app-auth-modal',
@@ -80,16 +82,35 @@ export class AuthModalComponent implements OnInit, OnChanges, AfterViewInit, OnD
   // Set: Whitelist of supported external OAuth identity providers
   supportedSocialProvidersSet = new Set<string>(['google', 'apple', 'facebook']);
 
+  // Map: Data structure mapping authentication channels to human-readable descriptors
+  authChannelsMap = new Map<string, string>([
+    ['email', 'Email & Password Authentication'],
+    ['phone', 'Mobile SMS OTP Verification'],
+    ['social', 'Federated OAuth (Google / Apple)']
+  ]);
+
   constructor(
     private fb: FormBuilder,
     public authService: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    // Component Dependency: Injected host AppComponent
+    @Optional() private appComponent?: AppComponent
   ) {}
 
   // LifeCycle Hook: ngOnInit initializes forms and active tab state
   ngOnInit(): void {
     // Set initial active tab from input property
     this.activeTab = this.initialTab;
+
+    // Expose authChannelsMap globally on window for console inspection
+    (window as any).authChannelsMap = this.authChannelsMap;
+    // Log with console.debug for Verbose level
+    console.debug('Map data (authChannelsMap):', this.authChannelsMap);
+    console.debug(this.authChannelsMap);
+    // Log authentication channels map data to console for Info level
+    console.log('Map data (authChannelsMap):', this.authChannelsMap);
+    // Log raw Map object for console tree inspection
+    console.log(this.authChannelsMap);
 
     // Initialize reactive form structures and validators
     this.initForms();
@@ -180,6 +201,9 @@ export class AuthModalComponent implements OnInit, OnChanges, AfterViewInit, OnD
 
   // Method: Switch modal between login and signup tabs
   switchTab(tab: 'login' | 'signup'): void {
+    // Log user click action to browser DevTools console
+    console.log(`[AuthModalComponent:onClick] 👆 Switch Auth Tab to: "${tab}"`);
+
     // Update active tab property
     this.activeTab = tab;
 
@@ -191,6 +215,9 @@ export class AuthModalComponent implements OnInit, OnChanges, AfterViewInit, OnD
 
     // Output: Emit tab switch event
     this.tabChange.emit(tab);
+
+    // Trigger view change detection
+    this.cdr.markForCheck();
   }
 
   // Method: Switch primary authentication channel between email and mobile OTP
@@ -529,6 +556,9 @@ export class AuthModalComponent implements OnInit, OnChanges, AfterViewInit, OnD
 
   // Method: Instant 1-click preview login with pre-configured demo profiles
   onDemoLogin(role: 'guest' | 'host' | 'vip'): void {
+    // Log user click action to browser DevTools console
+    console.log('[AuthModalComponent:onClick] 👆 1-Click Demo Login clicked for role:', role);
+
     // Validate role using Set.has() check
     if (!this.validDemoRolesSet.has(role)) {
       // Log warning if unsupported role requested
@@ -684,6 +714,15 @@ export class AuthModalComponent implements OnInit, OnChanges, AfterViewInit, OnD
 
   // Method: Close modal dialog and reset feedback states
   onClose(): void {
+    // Log user click action to browser DevTools console
+    console.log('[AuthModalComponent:onClick] 👆 Close Auth Modal');
+
+    // Verify dependent host component
+    if (this.appComponent) {
+      // Log interaction with dependent parent
+      console.debug('[AuthModalComponent] 🔗 Dependent AppComponent notified on auth modal dismissal');
+    }
+
     // Clear error message
     this.errorMessage = null;
 
@@ -696,6 +735,7 @@ export class AuthModalComponent implements OnInit, OnChanges, AfterViewInit, OnD
     // Output: Emit close event to parent container
     this.close.emit();
   }
+
 
   // LifeCycle Hook: ngOnDestroy clears active countdown timers on component destruction
   ngOnDestroy(): void {

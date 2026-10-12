@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, AfterViewInit, OnDestroy, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, AfterViewInit, OnDestroy, SimpleChanges, ChangeDetectorRef, Optional, Host } from '@angular/core';
 import { Hotel } from '../../../core/models/hotel.model';
 import { HotelService } from '../../../core/services/hotel.service';
+import { ListingsComponent } from '../../listings.component';
 
 // Component: Modal dialog rendering a rich interactive quick view of a selected hotel
 @Component({
@@ -29,7 +30,9 @@ export class HotelQuickViewComponent implements OnInit, OnChanges, AfterViewInit
 
   constructor(
     private hotelService: HotelService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    // Component Dependency: Injected parent ListingsComponent
+    @Optional() @Host() private parentListings?: ListingsComponent
   ) {}
 
   // LifeCycle Hook: ngOnInit initialization
@@ -114,19 +117,34 @@ export class HotelQuickViewComponent implements OnInit, OnChanges, AfterViewInit
 
     // Check if hotel ID exists
     if (this.hotel?.id) {
+      // Log user click action to browser DevTools console
+      console.log(`[HotelQuickViewComponent:onClick] 👆 Wishlist favorite clicked for Hotel ID: ${this.hotel.id} ("${this.hotel.name}")`);
+
       // Toggle favorite status via HotelService
       this.hotelService.toggleFavorite(this.hotel.id);
+
+      // Trigger change detection update
+      this.cdr.markForCheck();
     }
   }
 
   // Method: Switch the active enlarged photo index
   selectPhoto(index: number): void {
+    // Log user click action to browser DevTools console
+    console.log(`[HotelQuickViewComponent:onClick] 👆 Select Photo #${index + 1} for Hotel ID: ${this.hotel?.id}`);
+
     // Assign selected photo index
     this.activePhotoIndex = index;
+
+    // Trigger change detection update
+    this.cdr.markForCheck();
   }
 
   // Method: Emit close dialog event
   onClose(): void {
+    // Log user click action to browser DevTools console
+    console.log('[HotelQuickViewComponent:onClick] 👆 Close Quick View Modal');
+
     // Output: Emit close modal event
     this.close.emit();
   }
@@ -141,8 +159,20 @@ export class HotelQuickViewComponent implements OnInit, OnChanges, AfterViewInit
   onReserve(): void {
     // Check if hotel numeric ID exists
     if (this.hotel?.id) {
+      // Log user click action to browser DevTools console
+      console.log(`[HotelQuickViewComponent:onClick] 👆 Reserve / Book Now clicked from Quick View for Hotel ID: ${this.hotel.id} -> Navigating to /listings/${this.hotel.id}`);
+
+      // Verify parent component dependency
+      if (this.parentListings) {
+        // Log direct interaction with dependent parent component
+        console.debug('[HotelQuickViewComponent] 🔗 Interacting directly with dependent parent ListingsComponent');
+      }
+
       // Output: Emit reserve event with hotel ID
       this.reserve.emit(this.hotel.id);
+    } else {
+      // Log warning when hotel entity is missing
+      console.warn('[HotelQuickViewComponent] ⚠️ Attempted reserve without a valid hotel entity');
     }
   }
 

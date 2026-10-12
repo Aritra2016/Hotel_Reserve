@@ -114,6 +114,9 @@ export class HotelMapComponent implements OnInit, OnChanges, AfterViewInit, OnDe
     // Stop click event propagation to map canvas
     event.stopPropagation();
 
+    // Log user click action to browser DevTools console
+    console.log(`[HotelMapComponent:onClick] 👆 Map Pin clicked for Hotel ID: ${hotel?.id} ("${hotel?.name}") - $${hotel?.price}/night`);
+
     // Assign clicked hotel to popup card preview
     this.selectedHotelPopup = hotel;
 
@@ -125,6 +128,9 @@ export class HotelMapComponent implements OnInit, OnChanges, AfterViewInit, OnDe
   closePopup(event: MouseEvent): void {
     // Stop click event propagation
     event.stopPropagation();
+
+    // Log user click action to browser DevTools console
+    console.log('[HotelMapComponent:onClick] 👆 Close Map Pin Popup Preview');
 
     // Reset popup hotel preview to null
     this.selectedHotelPopup = null;
@@ -141,12 +147,18 @@ export class HotelMapComponent implements OnInit, OnChanges, AfterViewInit, OnDe
     // Stop propagation to background map
     event.stopPropagation();
 
+    // Log user click action to browser DevTools console
+    console.log(`[HotelMapComponent:onClick] 👆 View Hotel clicked from map popup for Hotel ID: ${id} -> Navigating to details`);
+
     // Output: Emit viewHotel event with numeric hotel ID
     this.viewHotel.emit(id);
   }
 
   // Method: Increase zoom level
   zoomIn(): void {
+    // Log user click action to browser DevTools console
+    console.log(`[HotelMapComponent:onClick] 👆 Map Zoom In (Current: ${this.zoomLevel})`);
+
     // Check if zoom level is under upper bound
     if (this.zoomLevel < 18) {
       // Increment zoom level
@@ -156,6 +168,9 @@ export class HotelMapComponent implements OnInit, OnChanges, AfterViewInit, OnDe
 
   // Method: Decrease zoom level
   zoomOut(): void {
+    // Log user click action to browser DevTools console
+    console.log(`[HotelMapComponent:onClick] 👆 Map Zoom Out (Current: ${this.zoomLevel})`);
+
     // Check if zoom level is above lower bound
     if (this.zoomLevel > 6) {
       // Decrement zoom level
@@ -167,6 +182,9 @@ export class HotelMapComponent implements OnInit, OnChanges, AfterViewInit, OnDe
   toggleMapType(): void {
     // Toggle layer mode between street and satellite
     this.mapType = this.mapType === 'street' ? 'satellite' : 'street';
+
+    // Log user click action to browser DevTools console
+    console.log(`[HotelMapComponent:onClick] 👆 Map Layer Toggled to: "${this.mapType}"`);
   }
 
   // LifeCycle Hook: ngOnDestroy cleanup

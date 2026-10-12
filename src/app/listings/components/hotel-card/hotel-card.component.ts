@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, AfterViewInit, OnDestroy, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, AfterViewInit, OnDestroy, SimpleChanges, ChangeDetectorRef, Optional, Host } from '@angular/core';
 import { Hotel } from '../../../core/models/hotel.model';
 import { HotelService } from '../../../core/services/hotel.service';
+import { ListingsComponent } from '../../listings.component';
 
 // Component: Renders an individual hotel listing card with image carousel, wishlist toggle, and pricing
 @Component({
@@ -35,7 +36,9 @@ export class HotelCardComponent implements OnInit, OnChanges, AfterViewInit, OnD
 
   constructor(
     private hotelService: HotelService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    // Component Dependency: Injected parent ListingsComponent
+    @Optional() @Host() private parentListings?: ListingsComponent
   ) {}
 
   // LifeCycle Hook: ngOnInit runs upon card initialization
@@ -99,8 +102,14 @@ export class HotelCardComponent implements OnInit, OnChanges, AfterViewInit, OnD
 
     // Check if hotel numeric identifier is present
     if (this.hotel?.id) {
+      // Log user click action to browser DevTools console
+      console.log(`[HotelCardComponent:onClick] 👆 Wishlist favorite clicked for Hotel ID: ${this.hotel.id} ("${this.hotel.name}")`);
+
       // Toggle favorite status via HotelService
       this.hotelService.toggleFavorite(this.hotel.id);
+
+      // Trigger change detection update
+      this.cdr.markForCheck();
     }
   }
 
@@ -109,9 +118,15 @@ export class HotelCardComponent implements OnInit, OnChanges, AfterViewInit, OnD
     // Stop click event propagation to card container
     event.stopPropagation();
 
+    // Log user click action to browser DevTools console
+    console.log(`[HotelCardComponent:onClick] 👆 Carousel Prev Image for Hotel ID: ${this.hotel?.id}`);
+
     // Compute previous image index with wrap-around
     this.currentImageIndex =
       (this.currentImageIndex - 1 + this.images.length) % this.images.length;
+
+    // Trigger change detection update
+    this.cdr.markForCheck();
   }
 
   // Method: Navigate to next image in carousel
@@ -119,8 +134,14 @@ export class HotelCardComponent implements OnInit, OnChanges, AfterViewInit, OnD
     // Stop click event propagation to card container
     event.stopPropagation();
 
+    // Log user click action to browser DevTools console
+    console.log(`[HotelCardComponent:onClick] 👆 Carousel Next Image for Hotel ID: ${this.hotel?.id}`);
+
     // Compute next image index with wrap-around
     this.currentImageIndex = (this.currentImageIndex + 1) % this.images.length;
+
+    // Trigger change detection update
+    this.cdr.markForCheck();
   }
 
   // Method: Select a specific carousel dot index
@@ -128,16 +149,34 @@ export class HotelCardComponent implements OnInit, OnChanges, AfterViewInit, OnD
     // Stop click event propagation to card container
     event.stopPropagation();
 
+    // Log user click action to browser DevTools console
+    console.log(`[HotelCardComponent:onClick] 👆 Carousel Select Dot #${index + 1} for Hotel ID: ${this.hotel?.id}`);
+
     // Assign chosen carousel image index
     this.currentImageIndex = index;
+
+    // Trigger change detection update
+    this.cdr.markForCheck();
   }
 
   // Method: Emit click event for card navigation
   onCardClick(): void {
     // Check if hotel numeric ID exists
     if (this.hotel?.id) {
+      // Log user click action to browser DevTools console
+      console.log(`[HotelCardComponent:onClick] 👆 Card clicked for Hotel ID: ${this.hotel.id} ("${this.hotel.name}") -> Navigating to /listings/${this.hotel.id}`);
+
+      // Check dependent parent component
+      if (this.parentListings) {
+        // Log interaction with dependent parent component
+        console.debug('[HotelCardComponent] 🔗 Parent ListingsComponent dependency confirmed');
+      }
+
       // Output: Emit cardClick event with hotel ID
       this.cardClick.emit(this.hotel.id);
+    } else {
+      // Log warning when hotel ID is missing
+      console.warn('[HotelCardComponent] ⚠️ Attempted card click without a valid hotel ID');
     }
   }
 
@@ -148,6 +187,9 @@ export class HotelCardComponent implements OnInit, OnChanges, AfterViewInit, OnD
 
     // Check if hotel entity is present
     if (this.hotel) {
+      // Log user click action to browser DevTools console
+      console.log(`[HotelCardComponent:onClick] 👆 Quick View clicked for Hotel ID: ${this.hotel.id} ("${this.hotel.name}")`);
+
       // Output: Emit quickView event with hotel entity
       this.quickView.emit(this.hotel);
     }

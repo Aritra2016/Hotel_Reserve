@@ -202,6 +202,9 @@ export class HotelFiltersComponent implements OnInit, OnChanges, AfterViewInit, 
 
   // Method: Update rating threshold and apply filters
   onRatingSelect(rating: number | null): void {
+    // Log user click action to browser DevTools console
+    console.log('[HotelFiltersComponent:onClick] 👆 Rating filter selected:', rating);
+
     // Update rating state
     this.selectedRating = rating;
 
@@ -211,6 +214,9 @@ export class HotelFiltersComponent implements OnInit, OnChanges, AfterViewInit, 
 
   // Method: Toggle an amenity using Set.has(), Set.delete(), and Set.add()
   toggleAmenity(amenity: string): void {
+    // Log user click action to browser DevTools console
+    console.log('[HotelFiltersComponent:onClick] 👆 Amenity filter toggled:', amenity);
+
     // Check if amenity exists in Set
     if (this.selectedAmenitiesSet.has(amenity)) {
       // Remove amenity from Set
@@ -235,6 +241,9 @@ export class HotelFiltersComponent implements OnInit, OnChanges, AfterViewInit, 
 
   // Method: Handle price changes and auto-correct min/max bounds
   onPriceChange(): void {
+    // Log user click action to browser DevTools console
+    console.log('[HotelFiltersComponent:onClick] 👆 Price range slider adjusted:', this.localMinPrice, 'to', this.localMaxPrice);
+
     // Check if min exceeds max
     if (this.localMinPrice > this.localMaxPrice) {
       // Auto-correct min bound
@@ -246,6 +255,9 @@ export class HotelFiltersComponent implements OnInit, OnChanges, AfterViewInit, 
 
   // Method: Toggle boolean perks (Superhost, Free Cancellation, Instant Book)
   togglePerk(perk: 'superhost' | 'cancellation' | 'instant'): void {
+    // Log user click action to browser DevTools console
+    console.log('[HotelFiltersComponent:onClick] 👆 Perk toggled:', perk);
+
     // Branch by perk type
     if (perk === 'superhost') this.superhostOnly = !this.superhostOnly;
     if (perk === 'cancellation') this.freeCancellationOnly = !this.freeCancellationOnly;
@@ -257,6 +269,9 @@ export class HotelFiltersComponent implements OnInit, OnChanges, AfterViewInit, 
 
   // Method: Reset all filters to their baseline defaults
   resetAll(): void {
+    // Log user click action to browser DevTools console
+    console.log('[HotelFiltersComponent:onClick] 👆 Reset All Filters clicked');
+
     // Reset min price
     this.localMinPrice = this.minBound;
 
@@ -325,6 +340,10 @@ export class HotelFiltersComponent implements OnInit, OnChanges, AfterViewInit, 
 
   // Method: Close sliding drawer on mobile
   onClose(): void {
+    // Log user click action to browser DevTools console
+    console.log('[HotelFiltersComponent:onClick] 👆 Close filter drawer');
+
+    // Output: Emit close drawer event
     this.closeDrawer.emit();
   }
 

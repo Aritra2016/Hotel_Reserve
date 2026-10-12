@@ -36,4 +36,10 @@ export class HomeService {
     // Delegate to HotelService searchHotels which executes live HttpClient.get visible in Network tab
     return this.hotelService.searchHotels(criteria);
   }
+
+  // Method: Retrieve complete list of hotels for reactive search filtering
+  getAllHotels(): Observable<Hotel[]> {
+    // Delegate to HotelService getAllHotels
+    return this.hotelService.getAllHotels();
+  }
 }

@@ -1,3 +1,24 @@
+<!-- SVG Symbol Library for SVG use-tag integration -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="icon-filter-glyph" viewBox="0 0 24 24">
+    <line x1="4" y1="21" x2="4" y2="14"></line>
+    <line x1="4" y1="10" x2="4" y2="3"></line>
+    <line x1="12" y1="21" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12" y2="3"></line>
+    <line x1="20" y1="21" x2="20" y2="16"></line>
+    <line x1="20" y1="12" x2="20" y2="3"></line>
+    <line x1="1" y1="14" x2="7" y2="14"></line>
+    <line x1="9" y1="8" x2="15" y2="8"></line>
+    <line x1="17" y1="16" x2="23" y2="16"></line>
+  </symbol>
+  <symbol id="icon-density-glyph" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="7" height="7"></rect>
+    <rect x="14" y="3" width="7" height="7"></rect>
+    <rect x="14" y="14" width="7" height="7"></rect>
+    <rect x="3" y="14" width="7" height="7"></rect>
+  </symbol>
+</svg>
+
 <!-- ===== TOP COMPACT SEARCH & CATEGORY BAR ===== -->
 <div class="search-refine-header">
   <div class="container search-refine-inner">
@@ -55,22 +76,49 @@
           type="text"
           formControlName="location"
           placeholder="Where to? (e.g. Miami, Paris, Bali)"
+          (input)="onSearchInput($event)"
+          (keydown.enter)="onEnterPress($event)"
+          (keyup)="onKeyUp($event)"
+          [ngClass]="{ 'field-has-value': !!refineSearchForm.get('location')?.value }"
+          [ngStyle]="{ 'font-weight': refineSearchForm.get('location')?.value ? '600' : '400' }"
         />
       </div>
 
       <div class="refine-field">
         <label>Check In</label>
-        <input type="date" formControlName="checkIn" />
+        <input
+          type="date"
+          formControlName="checkIn"
+          (input)="onSearchInput($event)"
+          (keydown.enter)="onEnterPress($event)"
+          (keyup)="onKeyUp($event)"
+          [ngClass]="{ 'field-has-value': !!refineSearchForm.get('checkIn')?.value }"
+        />
       </div>
 
       <div class="refine-field">
         <label>Check Out</label>
-        <input type="date" formControlName="checkOut" />
+        <input
+          type="date"
+          formControlName="checkOut"
+          (input)="onSearchInput($event)"
+          (keydown.enter)="onEnterPress($event)"
+          (keyup)="onKeyUp($event)"
+          [ngClass]="{ 'field-has-value': !!refineSearchForm.get('checkOut')?.value }"
+        />
       </div>
 
       <div class="refine-field">
         <label>Guests</label>
-        <input type="number" min="1" max="16" formControlName="guests" />
+        <input
+          type="number"
+          min="1"
+          max="16"
+          formControlName="guests"
+          (input)="onSearchInput($event)"
+          (keydown.enter)="onEnterPress($event)"
+          (keyup)="onKeyUp($event)"
+        />
       </div>
 
       <div class="refine-actions">
@@ -100,7 +148,7 @@
         </p>
 
         <!-- Market Overview Index Table -->
-        <div class="market-index-table-wrap">
+        <div class="market-index-table-wrap" *ngIf="viewSettings.showMarketStats">
           <table class="market-index-table" aria-label="Market Price Index">
             <thead>
               <tr>
@@ -112,9 +160,9 @@
             </thead>
             <tbody>
               <tr>
-                <td>{{ filters.location || 'Global Catalog' }}</td>
-                <td>${{ averagePricePerNight | number:'1.0-0' }} / night</td>
-                <td>{{ result ? result.totalCount : 0 }} Properties</td>
+                <td><data [value]="filters.location || 'Global'">{{ filters.location || 'Global Catalog' }}</data></td>
+                <td><data [value]="averagePricePerNight">${{ averagePricePerNight | number:'1.0-0' }} / night</data></td>
+                <td><data [value]="result ? result.totalCount : 0">{{ result ? result.totalCount : 0 }} Properties</data></td>
                 <td>Instant Book & Superhosts</td>
               </tr>
             </tbody>
@@ -174,20 +222,35 @@
         (click)="toggleFilterDrawer()"
         data-action="toggleFilterDrawer()"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="4" y1="21" x2="4" y2="14"></line>
-          <line x1="4" y1="10" x2="4" y2="3"></line>
-          <line x1="12" y1="21" x2="12" y2="12"></line>
-          <line x1="12" y1="8" x2="12" y2="3"></line>
-          <line x1="20" y1="21" x2="20" y2="16"></line>
-          <line x1="20" y1="12" x2="20" y2="3"></line>
-          <line x1="1" y1="14" x2="7" y2="14"></line>
-          <line x1="9" y1="8" x2="15" y2="8"></line>
-          <line x1="17" y1="16" x2="23" y2="16"></line>
-        </svg>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-filter-glyph"></use></svg>
         <span>Filters</span>
         <span class="filter-count-badge" *ngIf="activeFilterCount > 0">{{ activeFilterCount }}</span>
       </button>
+
+      <!-- Display Settings Toolbar -->
+      <div class="settings-toolbar" [attr.data-settings]="viewSettings.density" [ngClass]="{ 'settings-compact': viewSettings.density === 'compact' }">
+        <button
+          type="button"
+          class="btn-setting-item"
+          (click)="toggleDensitySetting()"
+          [ngClass]="{ 'active': viewSettings.density === 'compact' }"
+          data-action="toggleDensitySetting()"
+          title="Toggle Grid Density"
+        >
+          <svg width="14" height="14" fill="currentColor"><use href="#icon-density-glyph"></use></svg>
+          <span>{{ viewSettings.density === 'compact' ? 'Compact' : 'Default' }}</span>
+        </button>
+        <button
+          type="button"
+          class="btn-setting-item"
+          (click)="toggleMarketStatsSetting()"
+          [ngClass]="{ 'active': viewSettings.showMarketStats }"
+          data-action="toggleMarketStatsSetting()"
+          title="Toggle Market Statistics"
+        >
+          <span>Stats: {{ viewSettings.showMarketStats ? 'ON' : 'OFF' }}</span>
+        </button>
+      </div>
 
       <!-- Sort Dropdown -->
       <div class="sort-selector">

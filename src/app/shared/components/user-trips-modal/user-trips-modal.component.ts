@@ -9,8 +9,10 @@ import {
   Output,
   SimpleChanges,
   ChangeDetectorRef,
+  Optional,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { AppComponent } from '../../../app.component';
 import { BookingService } from '../../../core/services/booking.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { BookingConfirmation } from '../../../core/models/booking.model';
@@ -66,7 +68,9 @@ export class UserTripsModalComponent implements OnInit, OnChanges, AfterViewInit
     private bookingService: BookingService,
     private authService: AuthService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    // Component Dependency: Injected host AppComponent
+    @Optional() private appComponent?: AppComponent
   ) {}
 
   // LifeCycle Hook: ngOnInit binds initial observables and registers subscriptions
@@ -159,6 +163,9 @@ export class UserTripsModalComponent implements OnInit, OnChanges, AfterViewInit
     // Sanitize booking identifier string using trim
     const trimmedId = bookingId?.trim();
 
+    // Log user click action to browser DevTools console
+    console.log('[UserTripsModalComponent:onClick] 👆 Cancel Trip clicked for Booking ID:', trimmedId);
+
     // Check if trimmed booking reference exists and is non-empty
     if (trimmedId && trimmedId.length > 0) {
       // Set active cancelling ID indicator
@@ -184,7 +191,7 @@ export class UserTripsModalComponent implements OnInit, OnChanges, AfterViewInit
               this.isCancellingId = null;
 
               // Log successful cancellation
-              console.debug('[UserTripsModalComponent] Booking successfully cancelled:', trimmedId);
+              console.log('[UserTripsModalComponent:onClick] ✅ Booking successfully cancelled:', trimmedId);
             } else {
               // Reset active cancelling state on failure
               this.isCancellingId = null;
@@ -222,6 +229,15 @@ export class UserTripsModalComponent implements OnInit, OnChanges, AfterViewInit
 
   // Method: Emit close event to parent component
   onClose(): void {
+    // Log user click action to browser DevTools console
+    console.log('[UserTripsModalComponent:onClick] 👆 Close Trips Modal');
+
+    // Verify dependent host component
+    if (this.appComponent) {
+      // Log interaction with dependent parent
+      console.debug('[UserTripsModalComponent] 🔗 Dependent AppComponent notified on modal close');
+    }
+
     // Output: Emit close modal event
     this.close.emit();
   }
@@ -234,6 +250,9 @@ export class UserTripsModalComponent implements OnInit, OnChanges, AfterViewInit
 
   // Method: Navigate user to listings catalog to discover stays
   onExploreStays(): void {
+    // Log user click action to browser DevTools console
+    console.log('[UserTripsModalComponent:onClick] 👆 Explore Stays button clicked -> Navigating to /listings');
+
     // Close modal dialog
     this.onClose();
 

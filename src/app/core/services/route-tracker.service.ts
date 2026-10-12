@@ -139,10 +139,28 @@ export class RouteTrackerService {
     // Emit updated immutable clone of history array
     this.historySubject.next([...this.history]);
 
-    // Log navigation debug trace to browser console for DevTools Sources inspection
-    console.debug(
-      `[RouteTrackerService] Navigated to: "${urlAfterRedirects}" (Visits: ${currentCount + 1})`
+    // Output formatted route navigation telemetry log to DevTools Console
+    console.log(
+      `[RouteTracker] 🧭 Navigation route changed: "${urlAfterRedirects}" (Visits: ${currentCount + 1}, Total Transitions: ${this.history.length})`
     );
+  }
+
+  // Method: Explicitly log element click interactions and route telemetry to the browser console
+  logClickAction(component: string, action: string, details?: any): void {
+    // Extract current URL snapshot from BehaviorSubject or router url
+    const currentUrl = this.getCurrentUrl() || this.router?.url || (typeof window !== 'undefined' ? window.location.pathname : '/');
+
+    // Generate local time string
+    const timeStr = new Date().toLocaleTimeString();
+
+    // Check if optional details object was supplied
+    if (details !== undefined) {
+      // Log formatted click action with details object
+      console.log(`[${component}:onClick @ ${currentUrl} | ${timeStr}] 👆 Action: ${action}`, details);
+    } else {
+      // Log formatted click action
+      console.log(`[${component}:onClick @ ${currentUrl} | ${timeStr}] 👆 Action: ${action}`);
+    }
   }
 
   // Method: Retrieve current active URL string snapshot

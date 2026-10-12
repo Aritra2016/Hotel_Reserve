@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormControl } from '@angular/forms';
 import { Subject } from 'rxjs';
@@ -11,6 +11,8 @@ import {
   SortOption,
 } from '../core/models/hotel.model';
 import { HotelService } from '../core/services/hotel.service';
+import { RouteTrackerService } from '../core/services/route-tracker.service';
+import { HotelQuickViewComponent } from './components/hotel-quick-view/hotel-quick-view.component';
 
 @Component({
   selector: 'app-listings',
@@ -18,6 +20,15 @@ import { HotelService } from '../core/services/hotel.service';
   styleUrls: ['./listings.component.css'],
 })
 export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
+  // Component Dependency: ViewChild referencing dependent child HotelQuickViewComponent
+  @ViewChild(HotelQuickViewComponent) quickViewComponent?: HotelQuickViewComponent;
+
+  // Settings object managing listings display and density preferences
+  viewSettings = {
+    density: 'standard' as 'standard' | 'compact',
+    showMarketStats: true,
+  };
+
   // Concept: Reactive FormGroup for search refinement
   refineSearchForm!: FormGroup;
 
@@ -103,6 +114,7 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private hotelService: HotelService,
+    public routeTracker: RouteTrackerService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
   ) { }
@@ -266,6 +278,23 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
               });
 
+              // Expose map objects globally on window for console inspection
+              (window as any).hotelMap = this.hotelMap;
+              (window as any).categoryCountMap = this.categoryCountMap;
+              // Log map with console.debug for Verbose level
+              console.debug('Map data (hotelMap):', this.hotelMap);
+              console.debug(this.hotelMap);
+              console.debug('Category Counts Map data:', this.categoryCountMap);
+              console.debug(this.categoryCountMap);
+              // Log hotelMap data with console.log to see in console
+              console.log('Map data (hotelMap):', this.hotelMap);
+              // Log raw Map object for tree inspection
+              console.log(this.hotelMap);
+              // Log categoryCountMap data with console.log
+              console.log('Category Counts Map data:', this.categoryCountMap);
+              // Log raw Map object
+              console.log(this.categoryCountMap);
+
               // Log indexed stats
               console.debug(`[ListingsComponent] Fetched ${res.items.length} stays, indexed in Map & Set`);
             } else {
@@ -321,18 +350,29 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Category Selection
   onSelectCategory(catValue: string): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', `Select Category Filter: "${catValue}"`, { category: catValue });
+    // Update router query parameters for proper routing
     this.updateQueryParam({ category: catValue, page: 1 });
   }
 
   // Sorting
   onSortChange(sortBy: SortOption): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', `Change Sorting: "${sortBy}"`, { sortBy });
+    // Update router query parameters for proper routing
     this.updateQueryParam({ sortBy, page: 1 });
   }
 
   // View Mode
   setViewMode(mode: 'grid' | 'list' | 'map'): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', `Switch View Mode: "${mode}"`, { mode });
+    // Assign view mode
     this.viewMode = mode;
+    // Set appropriate page size based on view
     this.filters.pageSize = mode === 'map' ? 12 : 9;
+    // Fetch listings
     this.fetchListings();
   }
 
@@ -355,6 +395,13 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Search Refinement Form Submit with Form Validation, if-else conditions, and setTimeout async calling
   onRefineSearch(): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', 'Refine Search Form Submitted', {
+      location: this.refineSearchForm.get('location')?.value,
+      checkIn: this.refineSearchForm.get('checkIn')?.value,
+      checkOut: this.refineSearchForm.get('checkOut')?.value,
+      guests: this.refineSearchForm.get('guests')?.value
+    });
     // Validate Reactive Form validity
     if (this.refineSearchForm && this.refineSearchForm.valid) {
       // Close dropdown menu
@@ -409,6 +456,8 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Quick Remove of specific active filter with if-else branching
   removeFilter(filterKey: string, value?: string): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', `Remove Filter: ${filterKey}`, { filterKey, value });
     // Check if category filter
     if (filterKey === 'category') {
       // Reset category to all
@@ -446,6 +495,8 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Reset all filters to default baseline
   resetAllFilters(): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', 'Reset All Search Filters');
     // Navigate with cleared query parameters
     this.router.navigate(['/listings'], {
       queryParams: {
@@ -461,6 +512,8 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
   goToPage(pageNum: number): void {
     // Guard against out of range page numbers
     if (pageNum < 1 || (this.result && pageNum > this.result.totalPages)) return;
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', `Navigate to Page ${pageNum}`, { page: pageNum });
     // Update page query parameter
     this.updateQueryParam({ page: pageNum });
     // Smooth scroll to top of listing view
@@ -479,18 +532,28 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Open Quick View Modal for hotel
   openQuickView(hotel: Hotel): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', `Open Quick View Modal for Hotel ID: ${hotel?.id}`, { hotelId: hotel?.id, hotelName: hotel?.name });
     // Set active quick view hotel
     this.selectedHotelForQuickView = hotel;
+    // Request view change detection
+    this.cdr.markForCheck();
   }
 
   // Dismiss Quick View Modal
   closeQuickView(): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', 'Close Quick View Modal');
     // Clear quick view selection
     this.selectedHotelForQuickView = null;
+    // Request view change detection
+    this.cdr.markForCheck();
   }
 
   // Navigate to hotel details page
   navigateToListing(hotelId: number): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', `Navigate to Listing Details (/listings/${hotelId})`, { hotelId });
     // Perform router navigation
     this.router.navigate(['/listings', hotelId]);
   }
@@ -503,32 +566,52 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Map pin click handler
   onMapMarkerClick(hotel: Hotel): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', `Map Marker Clicked for Hotel ID: ${hotel?.id}`, { hotelId: hotel?.id, hotelName: hotel?.name });
     // Update selected hotel ID
     this.selectedHotelId = hotel.id;
+    // Request view change detection
+    this.cdr.markForCheck();
   }
 
   // Toggle filter drawer sliding visibility
   toggleFilterDrawer(): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', 'Toggle Filter Drawer', { isOpen: !this.isFilterDrawerOpen });
     // Invert boolean state
     this.isFilterDrawerOpen = !this.isFilterDrawerOpen;
+    // Request view change detection
+    this.cdr.markForCheck();
   }
 
   // Close filter drawer
   closeFilterDrawer(): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', 'Close Filter Drawer');
     // Set drawer flag to false
     this.isFilterDrawerOpen = false;
+    // Request view change detection
+    this.cdr.markForCheck();
   }
 
   // Toggle search dropdown modal
   toggleSearchDropdown(): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', 'Toggle Search Dropdown', { isOpen: !this.isSearchDropdownOpen });
     // Invert search dropdown state
     this.isSearchDropdownOpen = !this.isSearchDropdownOpen;
+    // Request view change detection
+    this.cdr.markForCheck();
   }
 
   // Close search dropdown modal
   closeSearchDropdown(): void {
+    // Log user click action to browser DevTools console
+    this.routeTracker.logClickAction('ListingsComponent', 'Close Search Dropdown');
     // Dismiss dropdown
     this.isSearchDropdownOpen = false;
+    // Request view change detection
+    this.cdr.markForCheck();
   }
 
   // Stop mouse event propagation
@@ -541,6 +624,66 @@ export class ListingsComponent implements OnInit, AfterViewInit, OnDestroy {
   trackByHotel(_: number, item: Hotel): number {
     // Return unique hotel ID
     return item.id;
+  }
+
+  // Method: Handle input keystrokes in search refinement
+  onSearchInput(event: Event): void {
+    // Extract input element value
+    const target = event.target as HTMLInputElement;
+
+    // Log debug statement for input tracking
+    console.debug('[ListingsComponent:input] ⌨️ Refine destination input:', target?.value);
+  }
+
+  // Method: Handle keyup keyboard events in refinement modal
+  onKeyUp(event: KeyboardEvent): void {
+    // Log debug statement for keyup event
+    console.debug('[ListingsComponent:keyUp] ⌨️ KeyUp detected:', event.key);
+
+    // Check if user pressed Escape key
+    if (event.key === 'Escape') {
+      // Log warning for dismiss action
+      console.warn('[ListingsComponent:keyUp] ⚠️ Escape pressed, dismissing search dropdown');
+
+      // Dismiss search refinement dropdown
+      this.isSearchDropdownOpen = false;
+    }
+  }
+
+  // Method: Handle Enter keydown in search refinement
+  onEnterPress(event: Event): void {
+    // Prevent default form submission
+    event.preventDefault();
+
+    // Log enter key action to console
+    console.log('[ListingsComponent:keydown.enter] ⏎ Enter pressed on refine search');
+
+    // Execute refinement form submission
+    this.onRefineSearch();
+  }
+
+  // Method: Toggle density layout setting
+  toggleDensitySetting(): void {
+    // Switch between standard and compact layout densities
+    this.viewSettings.density = this.viewSettings.density === 'standard' ? 'compact' : 'standard';
+
+    // Log updated setting state to console
+    console.log('[ListingsComponent:settings] ⚙️ Switched density setting to:', this.viewSettings.density);
+
+    // Request view change detection
+    this.cdr.markForCheck();
+  }
+
+  // Method: Toggle market overview stats table setting
+  toggleMarketStatsSetting(): void {
+    // Invert showMarketStats boolean setting
+    this.viewSettings.showMarketStats = !this.viewSettings.showMarketStats;
+
+    // Log debug diagnostics
+    console.debug('[ListingsComponent:settings] ⚙️ Switched showMarketStats setting to:', this.viewSettings.showMarketStats);
+
+    // Request view change detection
+    this.cdr.markForCheck();
   }
 
   // LifeCycle Hook: ngOnDestroy cleanup
