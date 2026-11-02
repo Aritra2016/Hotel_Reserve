@@ -1,0 +1,65 @@
+<!-- Fixed Top Progress Bar (GitHub / Airbnb Luxury Style) -->
+<div
+  class="top-progress-container"
+  [class.top-progress-container--active]="isLoading$ | async"
+  aria-hidden="true"
+>
+  <div
+    class="top-progress-bar"
+    [style.width.%]="progress$ | async"
+    role="progressbar"
+    [attr.aria-valuenow]="progress$ | async"
+    aria-valuemin="0"
+    aria-valuemax="100"
+  >
+    <div class="progress-glow-head"></div>
+  </div>
+</div>
+
+<!-- Full-Screen Glassmorphism Page Transition Overlay -->
+<div
+  class="page-loader-overlay"
+  *ngIf="isLoading$ | async"
+  role="status"
+  aria-live="polite"
+  aria-busy="true"
+  aria-label="Loading page content"
+>
+  <div class="loader-backdrop"></div>
+
+  <div class="loader-card">
+    <!-- Concentric Dual-Ring Spinner with Pulsing Brand Pin -->
+    <div class="brand-spinner-container">
+      <div class="spinner-ring ring-outer"></div>
+      <div class="spinner-ring ring-inner"></div>
+
+      <div class="brand-center-pin">
+        <svg width="30" height="32" viewBox="0 0 30 32" fill="var(--color-primary, #ff385c)" xmlns="http://www.w3.org/2000/svg">
+          <path d="M15 0C9.5 0 5 5.2 5 11.6c0 7.8 10 20.4 10 20.4s10-12.6 10-20.4C25 5.2 20.5 0 15 0zm0 16a4.4 4.4 0 110-8.8A4.4 4.4 0 0115 16z"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Animated Loading Information -->
+    <div class="loader-info">
+      <div class="brand-title-wrap">
+        <span class="brand-title">StayEase</span>
+        <span class="brand-dot"></span>
+      </div>
+
+      <p class="loader-status-text">
+        {{ (message$ | async) || 'Loading StayEase...' }}
+      </p>
+
+      <!-- Shimmer Progress Track -->
+      <div class="micro-track">
+        <div
+          class="micro-fill"
+          [style.width.%]="progress$ | async"
+        ></div>
+      </div>
+
+      <span class="loader-percentage">{{ (progress$ | async) || 0 }}%</span>
+    </div>
+  </div>
+</div>

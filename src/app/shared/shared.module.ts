@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ImgFallbackDirective } from './directives/img-fallback.directive';
 import { AuthModalComponent } from './components/auth-modal/auth-modal.component';
 import { UserTripsModalComponent } from './components/user-trips-modal/user-trips-modal.component';
+import { LoaderComponent } from './components/loader/loader.component';
 
 // Concept: SharedModule declaring and exporting shared components, directives and FormModules
 @NgModule({
@@ -12,6 +13,7 @@ import { UserTripsModalComponent } from './components/user-trips-modal/user-trip
     ImgFallbackDirective,
     AuthModalComponent,
     UserTripsModalComponent,
+    LoaderComponent,
   ],
   imports: [
     CommonModule,
@@ -27,6 +29,7 @@ import { UserTripsModalComponent } from './components/user-trips-modal/user-trip
     ImgFallbackDirective,
     AuthModalComponent,
     UserTripsModalComponent,
+    LoaderComponent,
   ],
 })
 export class SharedModule {}

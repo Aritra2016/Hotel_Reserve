@@ -55,8 +55,16 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   otpError = '';
   razorpayPaymentId = '';
 
-  // Concept: Reactive FormGroup for Guest and Payment checkout information
-  checkoutForm!: FormGroup;
+  // Concept: Comprehensive Reactive FormGroup tracking all reservation, guest, and payment details
+  bookingForm!: FormGroup;
+
+  // Compatibility getter and setter for checkoutForm
+  get checkoutForm(): FormGroup {
+    return this.bookingForm;
+  }
+  set checkoutForm(form: FormGroup) {
+    this.bookingForm = form;
+  }
 
   // Concept: Share and Wishlist state
   isFavorite = false;
@@ -247,26 +255,86 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Method: Build reactive checkout form with FormControls, FormArray, and Validators
+  // Method: Build comprehensive reactive booking form tracking all reservation, guest, and payment details
   private buildCheckoutForm(): void {
-    this.checkoutForm = this.fb.group({
-      // Primary Guest details
-      firstName: new FormControl('', [Validators.required, Validators.minLength(2)]),
-      lastName: new FormControl('', [Validators.required, Validators.minLength(2)]),
-      email: new FormControl('', [Validators.required, Validators.email]),
-      phone: new FormControl('', [Validators.required, Validators.pattern(/^[+0-9\s-()]{7,20}$/)]),
-      specialRequests: new FormControl(''),
+    this.bookingForm = this.fb.group(
+      {
+        // 1. Trip Reservation Details
+        checkIn: new FormControl(this.checkInDate, [Validators.required]),
+        checkOut: new FormControl(this.checkOutDate, [Validators.required]),
+        adults: new FormControl(this.adultsCount || 1, [Validators.required, Validators.min(1)]),
+        children: new FormControl(this.childrenCount || 0, [Validators.min(0)]),
 
-      // Concept: FormArray for additional accompanying guests
-      additionalGuests: this.fb.array([]),
+        // 2. Primary Guest details
+        firstName: new FormControl('', [Validators.required, Validators.minLength(2)]),
+        lastName: new FormControl('', [Validators.required, Validators.minLength(2)]),
+        email: new FormControl('', [Validators.required, Validators.email]),
+        phone: new FormControl('', [Validators.required, Validators.pattern(/^[+0-9\s-()]{7,20}$/)]),
+        specialRequests: new FormControl(''),
 
-      // Payment details - defaults to razorpay
-      paymentMethod: new FormControl('razorpay', [Validators.required]),
-      cardNumber: new FormControl(''),
-      cardHolder: new FormControl(''),
-      expiryDate: new FormControl(''),
-      cvv: new FormControl(''),
-    });
+        // 3. Concept: FormArray for additional accompanying guests
+        additionalGuests: this.fb.array([]),
+
+        // 4. Payment details - defaults to razorpay
+        paymentMethod: new FormControl('razorpay', [Validators.required]),
+        cardNumber: new FormControl(''),
+        cardHolder: new FormControl(''),
+        expiryDate: new FormControl(''),
+        cvv: new FormControl(''),
+      },
+      {
+        validators: [this.validateReservationForm.bind(this)],
+      }
+    );
+
+    // Subscribe to reactive form valueChanges to keep internal reservation states in sync
+    this.bookingForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((val) => {
+        if (val.checkIn && val.checkIn !== this.checkInDate) {
+          this.checkInDate = val.checkIn;
+        }
+        if (val.checkOut && val.checkOut !== this.checkOutDate) {
+          this.checkOutDate = val.checkOut;
+        }
+        if (val.adults !== undefined && val.adults !== this.adultsCount) {
+          this.adultsCount = Number(val.adults);
+        }
+        if (val.children !== undefined && val.children !== this.childrenCount) {
+          this.childrenCount = Number(val.children);
+        }
+        this.cdr.markForCheck();
+      });
+  }
+
+  // Custom Validator for dates and guest capacity
+  private validateReservationForm(control: any): { [key: string]: boolean } | null {
+    const group = control as FormGroup;
+    const checkIn = group.get('checkIn')?.value;
+    const checkOut = group.get('checkOut')?.value;
+    const adults = Number(group.get('adults')?.value || 1);
+    const children = Number(group.get('children')?.value || 0);
+
+    const errors: { [key: string]: boolean } = {};
+
+    if (checkIn && checkOut) {
+      const inDate = new Date(checkIn);
+      const outDate = new Date(checkOut);
+      if (outDate <= inDate) {
+        errors['invalidDateRange'] = true;
+      }
+    }
+
+    if (adults < 1) {
+      errors['minAdultsRequired'] = true;
+    }
+
+    const maxGuests = this.hotel?.maxGuests || 8;
+    if (adults + children > maxGuests) {
+      errors['maxGuestsExceeded'] = true;
+    }
+
+    return Object.keys(errors).length > 0 ? errors : null;
   }
 
   // Concept: Getter for additional guests FormArray
@@ -423,7 +491,22 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     return total === 1 ? '1 guest' : `${total} guests`;
   }
 
-  // Method: Date change handlers
+  // Method: Date input event handlers for direct HTML input element bindings
+  onCheckInInputChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input) {
+      this.onCheckInChange(input.value);
+    }
+  }
+
+  onCheckOutInputChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input) {
+      this.onCheckOutChange(input.value);
+    }
+  }
+
+  // Method: Date change handlers updating reactive form and date bounds
   onCheckInChange(val: string): void {
     // Log user click action to browser DevTools console
     this.routeTracker.logClickAction('HotelDetailsComponent', 'Change Check-In Date', { checkInDate: val });
@@ -443,7 +526,16 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       if (new Date(this.checkOutDate) <= start) {
         // Adjust check-out date to minimum allowable next day
         this.checkOutDate = this.minCheckOutDate;
+        if (this.bookingForm) {
+          this.bookingForm.get('checkOut')?.setValue(this.minCheckOutDate, { emitEvent: false });
+        }
       }
+    }
+    // Synchronize into Reactive Form
+    if (this.bookingForm) {
+      this.bookingForm.get('checkIn')?.setValue(val, { emitEvent: false });
+      this.bookingForm.get('checkIn')?.markAsDirty();
+      this.bookingForm.updateValueAndValidity();
     }
     // Request view change detection
     this.cdr.markForCheck();
@@ -454,11 +546,17 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.routeTracker.logClickAction('HotelDetailsComponent', 'Change Check-Out Date', { checkOutDate: val });
     // Assign check-out date string
     this.checkOutDate = val;
+    // Synchronize into Reactive Form
+    if (this.bookingForm) {
+      this.bookingForm.get('checkOut')?.setValue(val, { emitEvent: false });
+      this.bookingForm.get('checkOut')?.markAsDirty();
+      this.bookingForm.updateValueAndValidity();
+    }
     // Request view change detection
     this.cdr.markForCheck();
   }
 
-  // Method: Update adult or children counter steppers
+  // Method: Update adult or children counter steppers and synchronize reactive form
   updateGuests(type: 'adults' | 'children', delta: number): void {
     // Log user click action to browser DevTools console
     this.routeTracker.logClickAction('HotelDetailsComponent', `Update Guests Counter: ${type} (${delta > 0 ? '+1' : '-1'})`, {
@@ -473,9 +571,20 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       const maxAllowed = this.hotel?.maxGuests || 6;
       // Clamp adults count between 1 and maxAllowed
       this.adultsCount = Math.max(1, Math.min(maxAllowed, this.adultsCount + delta));
+      if (this.bookingForm) {
+        this.bookingForm.get('adults')?.setValue(this.adultsCount);
+        this.bookingForm.get('adults')?.markAsDirty();
+      }
     } else {
       // Clamp children count between 0 and 6
       this.childrenCount = Math.max(0, Math.min(6, this.childrenCount + delta));
+      if (this.bookingForm) {
+        this.bookingForm.get('children')?.setValue(this.childrenCount);
+        this.bookingForm.get('children')?.markAsDirty();
+      }
+    }
+    if (this.bookingForm) {
+      this.bookingForm.updateValueAndValidity();
     }
     // Request view change detection
     this.cdr.markForCheck();
@@ -616,6 +725,23 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Method: Open the Multi-Step Checkout Modal
   openCheckoutModal(): void {
+    // Validate reservation form controls before proceeding
+    if (this.bookingForm) {
+      this.bookingForm.get('checkIn')?.markAsTouched();
+      this.bookingForm.get('checkOut')?.markAsTouched();
+      this.bookingForm.get('adults')?.markAsTouched();
+
+      if (
+        this.bookingForm.get('checkIn')?.invalid ||
+        this.bookingForm.get('checkOut')?.invalid ||
+        this.bookingForm.hasError('invalidDateRange') ||
+        this.bookingForm.hasError('maxGuestsExceeded')
+      ) {
+        console.warn('[HotelDetailsComponent] Cannot proceed to checkout: reservation details are invalid', this.bookingForm.errors);
+        return;
+      }
+    }
+
     // Log user click action to browser DevTools console
     this.routeTracker.logClickAction('HotelDetailsComponent', 'Reserve / Book Now', {
       hotelId: this.hotel?.id,
@@ -625,7 +751,8 @@ export class HotelDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       nights: this.calculatedNights,
       guests: this.totalGuestsCount,
       totalAmountUsd: this.grandTotal,
-      totalAmountInr: this.grandTotalInr
+      totalAmountInr: this.grandTotalInr,
+      formValue: this.bookingForm?.value
     });
     // Set initial checkout step to review
     this.checkoutStep = 'review';

@@ -5,6 +5,7 @@ import { Observable, Subject } from 'rxjs';
 import { AuthService } from './core/services/auth.service';
 import { BookingService } from './core/services/booking.service';
 import { RouteTrackerService } from './core/services/route-tracker.service';
+import { LoadingService } from './core/services/loading.service';
 import { User } from './core/models/user.model';
 import { BookingConfirmation } from './core/models/booking.model';
 import { AuthModalComponent } from './shared/components/auth-modal/auth-modal.component';
@@ -69,6 +70,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     public authService: AuthService,
     public bookingService: BookingService,
     public routeTracker: RouteTrackerService,
+    public loadingService: LoadingService,
     private elementRef: ElementRef,
     private cdr: ChangeDetectorRef
   ) {

@@ -4,15 +4,21 @@ import {
   HttpHandler,
   HttpInterceptor,
   HttpRequest,
-  HttpResponse
+  HttpResponse,
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { finalize, tap } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
+import { LoadingService } from '../services/loading.service';
+
 @Injectable()
 export class TokenInterceptorService implements HttpInterceptor {
-  // Inject authentication service
-  constructor(private authService: AuthService) {}
+  // Inject authentication and loading services
+  constructor(
+    private authService: AuthService,
+    private loadingService: LoadingService
+  ) {}
+
   // Intercept outgoing HTTP requests and incoming responses
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Full request URL
@@ -21,8 +27,10 @@ export class TokenInterceptorService implements HttpInterceptor {
     console.log('Interceptor called for URL:\n' + url);
     // Create correlation ID
     const correlationId = 'req_' + Date.now();
-    // Display activity loader in console
+    // Display activity loader via LoadingService
     console.log('Loader shown');
+    this.loadingService.show();
+
     // Query current user token
     const user = this.authService.currentUserValue;
     // Token variable
@@ -31,13 +39,10 @@ export class TokenInterceptorService implements HttpInterceptor {
     const clonedReq = req.clone({
       setHeaders: {
         Authorization: token,
-        'X-Correlation-Id': correlationId
-      }
+        'X-Correlation-Id': correlationId,
+      },
     });
-    // Check token presence
-    if (token) {
-      // Pass-through token header
-    }
+
     // Handler stream
     return next.handle(clonedReq).pipe(
       // Tap for handling request with token
@@ -46,6 +51,7 @@ export class TokenInterceptorService implements HttpInterceptor {
       finalize(() => {
         // Hide loader on token path
         console.log('Hiding loader (token path)');
+        this.loadingService.hide();
       })
     );
   }

@@ -287,26 +287,43 @@
           </div>
 
           <!-- Dates & Guests Box -->
-          <div class="booking-form-box">
-            <div class="dates-row">
-              <div class="date-input-col">
-                <label>CHECK-IN</label>
+          <!-- Reactive Booking Form Tracking All Reservation Details -->
+          <form [formGroup]="bookingForm" class="booking-form-box" (ngSubmit)="openCheckoutModal()">
+            <div
+              class="dates-row"
+              [class.dates-row--invalid]="bookingForm.hasError('invalidDateRange') && (bookingForm.get('checkOut')?.touched || bookingForm.get('checkIn')?.touched)"
+            >
+              <div class="date-input-col" [class.field--invalid]="bookingForm.get('checkIn')?.invalid && bookingForm.get('checkIn')?.touched">
+                <label for="bookingCheckIn">CHECK-IN</label>
                 <input
+                  id="bookingCheckIn"
                   type="date"
+                  formControlName="checkIn"
                   [min]="minCheckInDate"
-                  [ngModel]="checkInDate"
-                  (ngModelChange)="onCheckInChange($event)"
+                  (change)="onCheckInInputChange($event)"
                 />
               </div>
-              <div class="date-input-col">
-                <label>CHECK-OUT</label>
+              <div class="date-input-col" [class.field--invalid]="(bookingForm.get('checkOut')?.invalid || bookingForm.hasError('invalidDateRange')) && bookingForm.get('checkOut')?.touched">
+                <label for="bookingCheckOut">CHECK-OUT</label>
                 <input
+                  id="bookingCheckOut"
                   type="date"
+                  formControlName="checkOut"
                   [min]="minCheckOutDate"
-                  [ngModel]="checkOutDate"
-                  (ngModelChange)="onCheckOutChange($event)"
+                  (change)="onCheckOutInputChange($event)"
                 />
               </div>
+            </div>
+
+            <!-- Reactive Date Range Validation Error Banner -->
+            <div class="booking-form-error" *ngIf="bookingForm.hasError('invalidDateRange') && (bookingForm.get('checkOut')?.touched || bookingForm.get('checkIn')?.touched)">
+              <span>⚠️ Check-out must be after check-in date</span>
+            </div>
+            <div class="booking-form-error" *ngIf="bookingForm.get('checkIn')?.hasError('required') && bookingForm.get('checkIn')?.touched">
+              <span>⚠️ Check-in date is required</span>
+            </div>
+            <div class="booking-form-error" *ngIf="bookingForm.get('checkOut')?.hasError('required') && bookingForm.get('checkOut')?.touched">
+              <span>⚠️ Check-out date is required</span>
             </div>
 
             <!-- Guests Dropdown Trigger -->
@@ -350,7 +367,11 @@
                 </div>
               </div>
             </div>
-          </div>
+
+            <div class="booking-form-error" *ngIf="bookingForm.hasError('maxGuestsExceeded')">
+              <span>⚠️ Maximum capacity is {{ hotel.maxGuests }} guests</span>
+            </div>
+          </form>
 
           <!-- Bold, High-Visibility Reserve CTA Button -->
           <button type="button" class="btn-reserve" (click)="openCheckoutModal()" data-action="openCheckoutModal()">
@@ -488,6 +509,34 @@
             <div>
               <strong>Guests</strong>
               <p>{{ totalGuestsLabel }} ({{ adultsCount }} adults, {{ childrenCount }} children)</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-Time Reactive Form Tracking Card -->
+        <div class="reactive-form-tracker-card">
+          <div class="rft-header">
+            <span class="rft-badge">📋 Reactive Form Status</span>
+            <span class="rft-status" [class.rft-status--valid]="bookingForm.valid">
+              {{ bookingForm.valid ? 'All Details Valid ✓' : 'Awaiting Guest Info' }}
+            </span>
+          </div>
+          <div class="rft-details-grid">
+            <div class="rft-item">
+              <span class="rft-label">Check-In</span>
+              <strong>{{ bookingForm.get('checkIn')?.value || checkInDate }}</strong>
+            </div>
+            <div class="rft-item">
+              <span class="rft-label">Check-Out</span>
+              <strong>{{ bookingForm.get('checkOut')?.value || checkOutDate }}</strong>
+            </div>
+            <div class="rft-item">
+              <span class="rft-label">Length of Stay</span>
+              <strong>{{ calculatedNights }} {{ calculatedNights === 1 ? 'Night' : 'Nights' }}</strong>
+            </div>
+            <div class="rft-item">
+              <span class="rft-label">Party</span>
+              <strong>{{ bookingForm.get('adults')?.value || 1 }} Adults, {{ bookingForm.get('children')?.value || 0 }} Children</strong>
             </div>
           </div>
         </div>
